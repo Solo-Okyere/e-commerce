@@ -311,13 +311,13 @@ export default function Home() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     disabled={navDisabled}
-                    aria-disabled={navDisabled}
+                    aria-disabled={navDisabled ? 'true' : 'false'}
                     tabIndex={navDisabled ? -1 : 0}
                     className={`w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none sm:w-56 ${disabledClass}`}
                   />
                   <Link
                     href="#products"
-                    aria-disabled={navDisabled}
+                    aria-disabled={navDisabled ? 'true' : 'false'}
                     tabIndex={navDisabled ? -1 : 0}
                     onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
                     className={`rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 ${disabledClass}`}
@@ -326,7 +326,7 @@ export default function Home() {
                   </Link>
                   <Link
                     href="/orders"
-                    aria-disabled={navDisabled}
+                    aria-disabled={navDisabled ? 'true' : 'false'}
                     tabIndex={navDisabled ? -1 : 0}
                     onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
                     className={`rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 ${disabledClass}`}
@@ -335,7 +335,7 @@ export default function Home() {
                   </Link>
                   <Link
                     href="/history"
-                    aria-disabled={navDisabled}
+                    aria-disabled={navDisabled ? 'true' : 'false'}
                     tabIndex={navDisabled ? -1 : 0}
                     onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
                     className={`rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 ${disabledClass}`}
@@ -344,7 +344,7 @@ export default function Home() {
                   </Link>
                   <Link
                     href="/cart"
-                    aria-disabled={navDisabled}
+                    aria-disabled={navDisabled ? 'true' : 'false'}
                     tabIndex={navDisabled ? -1 : 0}
                     onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
                     className={`rounded-full border border-slate-200 bg-slate-50 px-4 py-2 transition hover:border-slate-300 ${disabledClass}`}
