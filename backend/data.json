@@ -1,0 +1,60 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "ggggg",
+      "email": "g@gmail.com",
+      "password": "$2b$10$CfJuzR/rS9Q.j5Y0jKFCye.duL8OGgM2PFO9f2O9IgjiAGFwNTbjS",
+      "role": "customer"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Women",
+      "description": "Women clothing and accessories"
+    },
+    {
+      "id": 2,
+      "name": "Men",
+      "description": "Men clothing and accessories"
+    },
+    {
+      "id": 3,
+      "name": "Boutique",
+      "description": "Curated boutique pieces"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Floral Midi Dress",
+      "description": "A comfortable floral dress for everyday wear.",
+      "price": 49.99,
+      "image_url": "https://via.placeholder.com/400x400?text=Floral+Midi+Dress",
+      "category_id": 1,
+      "stock": 22
+    },
+    {
+      "id": 2,
+      "name": "Classic Denim Jacket",
+      "description": "Timeless denim jacket with a relaxed fit.",
+      "price": 79.99,
+      "image_url": "https://via.placeholder.com/400x400?text=Denim+Jacket",
+      "category_id": 2,
+      "stock": 15
+    },
+    {
+      "id": 3,
+      "name": "Boutique Statement Bag",
+      "description": "Designer-inspired bag that matches any outfit.",
+      "price": 129.99,
+      "image_url": "https://via.placeholder.com/400x400?text=Statement+Bag",
+      "category_id": 3,
+      "stock": 8
+    }
+  ],
+  "orders": [],
+  "order_items": [],
+  "cart_items": []
+}

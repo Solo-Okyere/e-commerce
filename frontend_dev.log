@@ -1,0 +1,215 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.20.10.2:3000
+- Environments: .env.local
+✓ Ready in 1084ms
+Creating turbopack project {
+  dir: 'c:\\Users\\FOR   SALE\\Desktop\\Ecommerce\\frontend',
+  testMode: true
+}
+
+○ Compiling / ...
+ GET / 200 in 3.3s (next.js: 3.0s, application-code: 364ms)
+ GET / 200 in 94ms (next.js: 9ms, application-code: 85ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 8.8s (next.js: 8.7s, application-code: 100ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 8.8s (next.js: 8.7s, application-code: 101ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 8.9s (next.js: 8.9s, application-code: 42ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 8.9s (next.js: 8.9s, application-code: 43ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 8.8s (next.js: 8.8s, application-code: 25ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 8.8s (next.js: 8.8s, application-code: 25ms)
+ GET / 200 in 81ms (next.js: 9ms, application-code: 72ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 1877ms (next.js: 1837ms, application-code: 39ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 1877ms (next.js: 1837ms, application-code: 39ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 1932ms (next.js: 1880ms, application-code: 52ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 1932ms (next.js: 1880ms, application-code: 52ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 1929ms (next.js: 1905ms, application-code: 24ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 1930ms (next.js: 1905ms, application-code: 25ms)
+ GET /auth 200 in 1197ms (next.js: 901ms, application-code: 296ms)
+ GET /cart 200 in 1254ms (next.js: 1003ms, application-code: 251ms)
+ GET /auth 200 in 126ms (next.js: 11ms, application-code: 115ms)
+ GET / 200 in 76ms (next.js: 8ms, application-code: 67ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 2.2s (next.js: 2.2s, application-code: 52ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 2.2s (next.js: 2.2s, application-code: 53ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 2.3s (next.js: 2.3s, application-code: 35ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 2.3s (next.js: 2.3s, application-code: 35ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 2.5s (next.js: 2.4s, application-code: 36ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 2.5s (next.js: 2.4s, application-code: 37ms)
+ GET / 200 in 77ms (next.js: 7ms, application-code: 70ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+✓ Compiled in 746ms
+ GET / 200 in 1082ms (next.js: 921ms, application-code: 161ms)
+ GET / 200 in 86ms (next.js: 10ms, application-code: 76ms)
+ GET / 200 in 81ms (next.js: 12ms, application-code: 69ms)
+ GET / 200 in 66ms (next.js: 8ms, application-code: 59ms)
+ GET / 200 in 93ms (next.js: 12ms, application-code: 80ms)
+ GET / 200 in 80ms (next.js: 9ms, application-code: 71ms)
+ GET / 200 in 207ms (next.js: 9ms, application-code: 198ms)
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+[TypeError: fetch failed] {
+  [cause]: Error: Client network socket disconnected before secure TLS connection was established
+      at ignore-listed frames {
+    code: 'ECONNRESET',
+    path: undefined,
+    host: 'via.placeholder.com',
+    port: 443,
+    localAddress: null
+  }
+}
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 2.2s (next.js: 2.1s, application-code: 100ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DDenim%2BJacket&w=1920&q=75 500 in 2.2s (next.js: 2.1s, application-code: 100ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 2.2s (next.js: 2.2s, application-code: 51ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DFloral%2BMidi%2BDress&w=1920&q=75 500 in 2.2s (next.js: 2.2s, application-code: 51ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 2.2s (next.js: 2.2s, application-code: 20ms)
+ GET /_next/image?url=https%3A%2F%2Fvia.placeholder.com%2F400x400%3Ftext%3DStatement%2BBag&w=1920&q=75 500 in 2.2s (next.js: 2.2s, application-code: 20ms)
+✓ Compiled in 681ms
+ GET / 200 in 614ms (next.js: 263ms, application-code: 352ms)
+ GET / 200 in 330ms (next.js: 9ms, application-code: 321ms)
+ GET / 200 in 1325ms (next.js: 283ms, application-code: 1042ms)
+ GET / 200 in 44ms (next.js: 25ms, application-code: 18ms)
+ GET / 200 in 20ms (next.js: 7ms, application-code: 13ms)
+ GET / 200 in 68ms (next.js: 6ms, application-code: 62ms)
+ GET / 200 in 24ms (next.js: 8ms, application-code: 17ms)
+ GET / 200 in 64ms (next.js: 10ms, application-code: 54ms)
+ GET /auth 200 in 702ms (next.js: 532ms, application-code: 170ms)

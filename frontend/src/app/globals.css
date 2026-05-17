@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Staggered animation delays for product cards */
+.prod-stagger-0 { animation-delay: 0ms; }
+.prod-stagger-1 { animation-delay: 100ms; }
+.prod-stagger-2 { animation-delay: 200ms; }
+.prod-stagger-3 { animation-delay: 300ms; }
+.prod-stagger-4 { animation-delay: 400ms; }
+.prod-stagger-5 { animation-delay: 500ms; }
+.prod-stagger-6 { animation-delay: 600ms; }
+.prod-stagger-7 { animation-delay: 700ms; }
+.prod-stagger-8 { animation-delay: 800ms; }
+.prod-stagger-9 { animation-delay: 900ms; }
+.prod-stagger-10 { animation-delay: 1000ms; }
+.prod-stagger-11 { animation-delay: 1100ms; }
+.prod-stagger-12 { animation-delay: 1200ms; }
+.prod-stagger-13 { animation-delay: 1300ms; }
+.prod-stagger-14 { animation-delay: 1400ms; }
+.prod-stagger-15 { animation-delay: 1500ms; }
+.prod-stagger-16 { animation-delay: 1600ms; }
+.prod-stagger-17 { animation-delay: 1700ms; }
+.prod-stagger-18 { animation-delay: 1800ms; }
+.prod-stagger-19 { animation-delay: 1900ms; }
+.prod-stagger-20 { animation-delay: 2000ms; }
+.prod-stagger-21 { animation-delay: 2100ms; }
+.prod-stagger-22 { animation-delay: 2200ms; }
+.prod-stagger-23 { animation-delay: 2300ms; }
+.prod-stagger-24 { animation-delay: 2400ms; }
+.prod-stagger-25 { animation-delay: 2500ms; }
+.prod-stagger-26 { animation-delay: 2600ms; }
+.prod-stagger-27 { animation-delay: 2700ms; }
+.prod-stagger-28 { animation-delay: 2800ms; }
+.prod-stagger-29 { animation-delay: 2900ms; }
+.prod-stagger-30 { animation-delay: 3000ms; }
+.prod-stagger-31 { animation-delay: 3100ms; }
+.prod-stagger-32 { animation-delay: 3200ms; }
+.prod-stagger-33 { animation-delay: 3300ms; }
+.prod-stagger-34 { animation-delay: 3400ms; }
+.prod-stagger-35 { animation-delay: 3500ms; }
+.prod-stagger-36 { animation-delay: 3600ms; }
+.prod-stagger-37 { animation-delay: 3700ms; }
+.prod-stagger-38 { animation-delay: 3800ms; }
+.prod-stagger-39 { animation-delay: 3900ms; }
+.prod-stagger-40 { animation-delay: 4000ms; }
+.prod-stagger-41 { animation-delay: 4100ms; }
+.prod-stagger-42 { animation-delay: 4200ms; }
+.prod-stagger-43 { animation-delay: 4300ms; }
+.prod-stagger-44 { animation-delay: 4400ms; }
+.prod-stagger-45 { animation-delay: 4500ms; }
+.prod-stagger-46 { animation-delay: 4600ms; }
+.prod-stagger-47 { animation-delay: 4700ms; }
+.prod-stagger-48 { animation-delay: 4800ms; }
+.prod-stagger-49 { animation-delay: 4900ms; }
+.prod-stagger-50 { animation-delay: 5000ms; }
