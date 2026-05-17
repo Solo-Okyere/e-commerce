@@ -60,6 +60,7 @@ export default function Home() {
   const [isExiting, setIsExiting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pageAnimated, setPageAnimated] = useState(false);
+  const [shopEntered, setShopEntered] = useState(false);
 
   const splashAnimationClass = showSplash ? 'opacity-100 scale-100' : 'opacity-0 scale-95';
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -76,6 +77,9 @@ export default function Home() {
     if (!hasSeenSplash) {
       setShowSplash(true); // eslint-disable-line react-hooks/set-state-in-effect
     }
+    // Restore shop-entered state (controls navbar interactivity)
+    const entered = sessionStorage.getItem('fosogo_shop_entered') === 'true';
+    if (entered) setShopEntered(true);
   }, [mounted]);
 
   const fetchData = useCallback(async () => {
@@ -268,6 +272,9 @@ export default function Home() {
       // Wait for exit animation to complete before hiding splash
       setTimeout(() => {
         sessionStorage.setItem('fosogo_seen_splash', 'true');
+        // mark that the user has actively entered the shop
+        sessionStorage.setItem('fosogo_shop_entered', 'true');
+        setShopEntered(true);
         setShowSplash(false);
         setIsExiting(false);
         setPageAnimated(true);
@@ -290,21 +297,64 @@ export default function Home() {
               <p className="text-sm text-slate-500">Boutique fashion marketplace</p>
             </div>
           </div>
-<nav className="flex flex-wrap items-center gap-3 text-sm font-medium text-slate-600">
-             <input
-               type="text"
-               placeholder="Search products..."
-               value={searchQuery}
-               onChange={(e) => setSearchQuery(e.target.value)}
-               className="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none sm:w-56"
-             />
-             <Link href="#products" className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900">Products</Link>
-             <Link href="/orders" className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900">Orders</Link>
-             <Link href="/history" className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900">History</Link>
-             <Link href="/cart" className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 transition hover:border-slate-300">
-               Cart ({cartCount})
-             </Link>
-           </nav>
+          {/** Disable nav interactivity until user clicks Shop now */}
+          <nav className="flex flex-wrap items-center gap-3 text-sm font-medium text-slate-600">
+            {(() => {
+              const navDisabled = !shopEntered;
+              const disabledClass = navDisabled ? 'pointer-events-none opacity-60' : '';
+
+              return (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    disabled={navDisabled}
+                    aria-disabled={navDisabled}
+                    tabIndex={navDisabled ? -1 : 0}
+                    className={`w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none sm:w-56 ${disabledClass}`}
+                  />
+                  <Link
+                    href="#products"
+                    aria-disabled={navDisabled}
+                    tabIndex={navDisabled ? -1 : 0}
+                    onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
+                    className={`rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 ${disabledClass}`}
+                  >
+                    Products
+                  </Link>
+                  <Link
+                    href="/orders"
+                    aria-disabled={navDisabled}
+                    tabIndex={navDisabled ? -1 : 0}
+                    onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
+                    className={`rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 ${disabledClass}`}
+                  >
+                    Orders
+                  </Link>
+                  <Link
+                    href="/history"
+                    aria-disabled={navDisabled}
+                    tabIndex={navDisabled ? -1 : 0}
+                    onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
+                    className={`rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-900 ${disabledClass}`}
+                  >
+                    History
+                  </Link>
+                  <Link
+                    href="/cart"
+                    aria-disabled={navDisabled}
+                    tabIndex={navDisabled ? -1 : 0}
+                    onClick={(e) => { if (navDisabled) { e.preventDefault(); e.stopPropagation(); } }}
+                    className={`rounded-full border border-slate-200 bg-slate-50 px-4 py-2 transition hover:border-slate-300 ${disabledClass}`}
+                  >
+                    Cart ({cartCount})
+                  </Link>
+                </>
+              );
+            })()}
+          </nav>
         </div>
       </header>
 
