@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   images: {
     remotePatterns: [
       {
@@ -16,7 +21,7 @@ const nextConfig = {
     ],
   },
   allowedDevOrigins: ['172.20.10.2'],
-  outputFileTracingRoot: process.cwd(),
+  outputFileTracingRoot: path.resolve(__dirname),
 };
 
 module.exports = nextConfig;
