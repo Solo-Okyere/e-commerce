@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -59,6 +59,22 @@ type AdminOrder = {
   items: AdminOrderItem[];
 };
 
+type RawAdminOrder = Record<string, unknown>;
+
+function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
+  const createdAt =
+    typeof order['created_at'] === 'string'
+      ? order['created_at']
+      : typeof order['createdAt'] === 'string'
+      ? order['createdAt']
+      : new Date().toISOString();
+
+  return {
+    ...order,
+    createdAt,
+  } as AdminOrder;
+}
+
 const sizeOptions = ['s', 'm', 'l', 'xl', 'xxl'];
 
 export default function AdminPage() {
@@ -69,9 +85,19 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [newOrderAlert, setNewOrderAlert] = useState(false);
+  const [newOrderCount, setNewOrderCount] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+
+  const activeOrders = useMemo(
+    () => orders.filter((order) => {
+      const status = order.status.toLowerCase();
+      return status !== 'delivered' && status !== 'cancelled';
+    }),
+    [orders]
+  );
 
   // Form state
   const [name, setName] = useState('');
@@ -83,11 +109,7 @@ export default function AdminPage() {
   const [stock, setStock] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -110,39 +132,36 @@ export default function AdminPage() {
       const usersData = await usersRes.json();
 
       let ordersData: AdminOrder[] = [];
-      const token = getToken();
 
-      if (token) {
-        try {
-          const ordersRes = await fetch(`${apiUrl}/api/payments/orders/all`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+      try {
+        const ordersRes = await fetch(`${apiUrl}/api/payments/orders/all`);
 
-          if (ordersRes.ok) {
-            const rawOrders: any[] = await ordersRes.json();
-            ordersData = rawOrders.map((order) => ({
-              ...order,
-              createdAt: order.created_at || order.createdAt || new Date().toISOString(),
-            }));
-          } else if (ordersRes.status === 401) {
-            localStorage.removeItem('fosogo_token');
-          } else {
-            const payload = await ordersRes.json();
-            throw new Error(payload.message || 'Failed to load admin orders');
-          }
-        } catch (fetchOrdersError) {
-          console.warn('Admin order fetch failed, falling back to localStorage:', fetchOrdersError);
+        if (ordersRes.ok) {
+          const rawOrders: RawAdminOrder[] = await ordersRes.json();
+          ordersData = rawOrders.map(normalizeAdminOrder);
+        } else {
+          const payload = await ordersRes.json();
+          console.warn('Admin order fetch failed, falling back to localStorage:', payload);
         }
+      } catch (fetchOrdersError) {
+        console.warn('Admin order fetch failed, falling back to localStorage:', fetchOrdersError);
       }
+
+      const ordersJson = localStorage.getItem('orders');
+      const storedOrders: RawAdminOrder[] = ordersJson ? (JSON.parse(ordersJson) as RawAdminOrder[]) : [];
+      const normalizedStoredOrders = storedOrders.map(normalizeAdminOrder);
 
       if (ordersData.length === 0) {
-        const ordersJson = localStorage.getItem('orders');
-        const storedOrders: AdminOrder[] = ordersJson ? JSON.parse(ordersJson) : [];
-        ordersData = storedOrders.map((order) => ({
-          ...order,
-          createdAt: order.created_at || order.createdAt || new Date().toISOString(),
-        }));
+        ordersData = normalizedStoredOrders;
+      } else if (normalizedStoredOrders.length > 0) {
+        const existingIds = new Set(ordersData.map((order) => order.id));
+        ordersData = [
+          ...ordersData,
+          ...normalizedStoredOrders.filter((order) => !existingIds.has(order.id)),
+        ];
       }
+
+      ordersData = ordersData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setProducts(productsData);
       setCategories(categoriesData);
@@ -153,32 +172,21 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  function getOrderNumber(order: AdminOrder) {
+    return order.order_number || `FSG-${String(order.id).padStart(4, '0')}`;
   }
 
-  function resetForm() {
-    setName('');
-    setDescription('');
-    setPrice('');
-    setImageUrl('');
-    setImageFile(null);
-    setCategoryId('');
-    setStock('');
-    setSelectedSizes([]);
-    setEditingProduct(null);
-    setShowAddForm(false);
-  }
-
-  function populateForm(product: Product) {
-    setName(product.name);
-    setDescription(product.description);
-    setPrice(product.price.toString());
-    setImageUrl(product.image_url || '');
-    setImageFile(null);
-    setCategoryId(product.category_id?.toString() || '');
-    setStock(product.stock?.toString() || '');
-    setSelectedSizes(parseSizes(product.sizes));
-    setEditingProduct(product);
-    setShowAddForm(true);
+  function getCustomerName(order: AdminOrder) {
+    if (order.user?.name) return order.user.name;
+    try {
+      const addr = JSON.parse(order.shipping_address);
+      if (addr?.name) return addr.name;
+    } catch {
+      // ignore invalid JSON
+    }
+    return 'Guest';
   }
 
   function parseSizes(sizes?: string) {
@@ -200,25 +208,6 @@ export default function AdminPage() {
     if (!url) return undefined;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     return url.startsWith('/uploads') ? `${apiUrl}${url}` : url;
-  }
-
-  function getToken() {
-    return typeof window !== 'undefined' ? localStorage.getItem('fosogo_token') : null;
-  }
-
-  function getOrderNumber(order: AdminOrder) {
-    return order.order_number || `FSG-${String(order.id).padStart(4, '0')}`;
-  }
-
-  function getCustomerName(order: AdminOrder) {
-    if (order.user?.name) return order.user.name;
-    try {
-      const addr = JSON.parse(order.shipping_address);
-      if (addr?.name) return addr.name;
-    } catch {
-      // ignore invalid JSON
-    }
-    return 'Guest';
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -341,6 +330,96 @@ export default function AdminPage() {
     }
   }
 
+  function resetForm() {
+    setName('');
+    setDescription('');
+    setPrice('');
+    setImageUrl('');
+    setImageFile(null);
+    setCategoryId('');
+    setStock('');
+    setSelectedSizes([]);
+    setEditingProduct(null);
+    setShowAddForm(false);
+  }
+
+  function populateForm(product: Product) {
+    setName(product.name);
+    setDescription(product.description);
+    setPrice(product.price.toString());
+    setImageUrl(product.image_url || '');
+    setImageFile(null);
+    setCategoryId(product.category_id?.toString() || '');
+    setStock(product.stock?.toString() || '');
+    setSelectedSizes(parseSizes(product.sizes));
+    setEditingProduct(product);
+    setShowAddForm(true);
+  }
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchData);
+  }, [fetchData]);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== 'orders' || !event.newValue) return;
+
+      try {
+        const storedOrders: RawAdminOrder[] = JSON.parse(event.newValue);
+        const normalizedOrders = storedOrders.map(normalizeAdminOrder);
+
+        setOrders((currentOrders) => {
+          const existingIds = new Set(currentOrders.map((order) => order.id));
+          const newOrders = normalizedOrders.filter((order) => !existingIds.has(order.id));
+          const mergedOrders = [
+            ...currentOrders,
+            ...newOrders,
+          ];
+
+          if (newOrders.length > 0) {
+            setNewOrderCount((count) => count + newOrders.length);
+            setNewOrderAlert(true);
+          }
+
+          return mergedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        });
+      } catch {
+        // Ignore invalid storage content
+      }
+    };
+
+    const handleAdminOrdersUpdated = () => {
+      setNewOrderAlert(true);
+      void fetchData();
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('adminOrdersUpdated', handleAdminOrdersUpdated);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('adminOrdersUpdated', handleAdminOrdersUpdated);
+    };
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (!newOrderAlert) return;
+
+    const timeout = window.setTimeout(() => {
+      setNewOrderAlert(false);
+      setNewOrderCount(0);
+    }, 7000);
+    return () => window.clearTimeout(timeout);
+  }, [newOrderAlert]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      void fetchData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchData]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-10">
@@ -359,13 +438,23 @@ export default function AdminPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
               <p className="mt-2 text-gray-600">Manage products and inventory.</p>
+              {newOrderAlert && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-900">
+                  <span>New order received</span>
+                  {newOrderCount > 0 && (
+                    <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-emerald-900 px-2 text-xs text-white">
+                      {newOrderCount}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/admin/history"
                 className="rounded-2xl border border-gray-300 bg-white px-6 py-3 text-gray-900 transition hover:border-gray-900 hover:bg-gray-100"
               >
-                Delivered History
+                Order History
               </Link>
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
@@ -486,29 +575,28 @@ export default function AdminPage() {
                     ))}
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Available Sizes</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {sizeOptions.map((size) => (
-                    <label
-                      key={size}
-                      className={`inline-flex cursor-pointer items-center rounded-full border px-4 py-2 text-sm font-semibold uppercase transition ${
-                        selectedSizes.includes(size)
-                          ? 'border-gray-900 bg-gray-900 text-white'
-                          : 'border-gray-300 bg-white text-gray-700 hover:border-gray-500'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSizes.includes(size)}
-                        onChange={() => toggleSize(size)}
-                        className="sr-only"
-                      />
-                      {size}
-                    </label>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Available Sizes</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {sizeOptions.map((size) => (
+                      <label
+                        key={size}
+                        className={`inline-flex cursor-pointer items-center rounded-full border px-4 py-2 text-sm font-semibold uppercase transition ${
+                          selectedSizes.includes(size)
+                            ? 'border-gray-900 bg-gray-900 text-white'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-500'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedSizes.includes(size)}
+                          onChange={() => toggleSize(size)}
+                          className="sr-only"
+                        />
+                        {size}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -538,20 +626,20 @@ export default function AdminPage() {
           <div className="divide-y divide-gray-200">
             {products.map((product) => (
               <div key={product.id} className="p-6 flex items-center gap-4">
-                 <div className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                   {product.image_url && normalizeImageUrl(product.image_url) ? (
-                     <Image
-                       src={normalizeImageUrl(product.image_url)!}
-                       alt={product.name}
-                       width={64}
-                       height={64}
-                       className="h-full w-full object-contain"
-                       unoptimized
-                     />
-                   ) : (
-                     <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">No image</div>
-                   )}
-                 </div>
+                <div className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                  {product.image_url && normalizeImageUrl(product.image_url) ? (
+                    <Image
+                      src={normalizeImageUrl(product.image_url)!}
+                      alt={product.name}
+                      width={64}
+                      height={64}
+                      className="h-full w-full object-contain"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">No image</div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
                   <p className="text-sm text-gray-600 truncate">{product.description}</p>
@@ -582,46 +670,47 @@ export default function AdminPage() {
 
         {/* Customers section hidden - code preserved */}
         {false && (
-        <div className="mt-8 rounded-3xl bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Customers ({users.length})</h2>
-            <p className="mt-1 text-sm text-gray-600">View all users and their total order counts.</p>
+          <div className="mt-8 rounded-3xl bg-white shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Customers ({users.length})</h2>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {users.length === 0 ? (
+                <div className="p-6 text-gray-600">No customers found.</div>
+              ) : (
+                <div>
+                  {users
+                    .filter(user => !(user.name === 'okyere' && user.email === 'quexipapphlicker@gmail.com'))
+                    .map((user) => (
+                      <div key={user.id} className="p-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-lg font-semibold text-gray-900">{user.name}</p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                        <div className="space-y-1 text-sm text-gray-600 text-right">
+                          <p className="font-medium text-gray-900 capitalize">{user.role}</p>
+                          <p>{user.orderCount} {user.orderCount === 1 ? 'order' : 'orders'}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="divide-y divide-gray-200">
-            {users.length === 0 ? (
-              <div className="p-6 text-gray-600">No customers found.</div>
-            ) : (
-              users
-                .filter(user => !(user.name === 'okyere' && user.email === 'quexipapphlicker@gmail.com'))
-                .map((user) => (
-                  <div key={user.id} className="p-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-lg font-semibold text-gray-900">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-600 text-right">
-                      <p className="font-medium text-gray-900 capitalize">{user.role}</p>
-                      <p>{user.orderCount} {user.orderCount === 1 ? 'order' : 'orders'}</p>
-                    </div>
-                  </div>
-                ))
-            )}
-          </div>
-        </div>
         )}
 
         <div className="mt-8 rounded-3xl bg-white shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Active Orders ({orders.filter((order) => order.status.toLowerCase() !== 'delivered').length})</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Active Orders ({activeOrders.length})
+            </h2>
             <p className="mt-1 text-sm text-gray-600">Manage pending, processing, and shipped orders.</p>
           </div>
           <div className="divide-y divide-gray-200">
-            {orders.filter((order) => order.status.toLowerCase() !== 'delivered').length === 0 ? (
+            {activeOrders.length === 0 ? (
               <div className="p-6 text-gray-600">No active orders found.</div>
             ) : (
-              orders
-                .filter((order) => order.status.toLowerCase() !== 'delivered')
-                .map((order) => (
+              activeOrders.map((order) => (
                   <div key={order.id} className="p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>

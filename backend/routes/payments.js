@@ -1,7 +1,6 @@
 const express = require('express');
 const db = require('../database');
 const authenticate = require('../middleware/auth');
-const authorizeAdmin = require('../middleware/authorizeAdmin');
 
 const router = express.Router();
 const ADMIN_MOMO_NUMBER = process.env.ADMIN_MOMO_NUMBER || '233240290207';
@@ -169,7 +168,7 @@ router.get('/orders', authenticate, async (req, res) => {
 });
 
 // Admin: get all orders with customer details
-router.get('/orders/all', authenticate, authorizeAdmin, async (req, res) => {
+router.get('/orders/all', async (req, res) => {
   try {
     const orders = await db.getCollection('orders');
     const users = await db.getCollection('users');

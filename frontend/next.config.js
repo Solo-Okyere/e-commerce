@@ -16,6 +16,7 @@ const nextConfig = {
     ],
   },
   allowedDevOrigins: ['172.20.10.2'],
+  outputFileTracingRoot: process.cwd(),
 };
 
 module.exports = nextConfig;

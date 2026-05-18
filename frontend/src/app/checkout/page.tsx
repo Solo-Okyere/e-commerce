@@ -143,6 +143,9 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
       const orders: unknown[] = existingOrders ? JSON.parse(existingOrders) : [];
       orders.unshift(newOrder);
       localStorage.setItem('orders', JSON.stringify(orders));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('adminOrdersUpdated'));
+      }
 
       // Clear temporary cart and form state
       localStorage.removeItem('fosogo_cart');

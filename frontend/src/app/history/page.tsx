@@ -58,13 +58,13 @@ export default function HistoryPage() {
           throw new Error(payload.message || 'Failed to load orders');
         } else {
           const data = await response.json();
-          const normalized: Order[] = data.map((o: { created_at: string }) => ({
+          const normalized: Order[] = data.map((o: any) => ({
             ...o,
-            createdAt: o.created_at,
+            createdAt: o.created_at || o.createdAt || new Date().toISOString(),
           }))
           // Only include delivered orders for history page
-          .filter(order => order.status.toLowerCase() === 'delivered')
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          .filter((order: Order) => order.status.toLowerCase() === 'delivered')
+          .sort((a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setOrders(normalized);
           return;
         }
@@ -74,7 +74,7 @@ export default function HistoryPage() {
       const ordersJson = localStorage.getItem('orders');
       const storedOrders: Order[] = ordersJson ? JSON.parse(ordersJson) : [];
       const filteredAndSorted = storedOrders
-        .filter(order => order.status.toLowerCase() === 'delivered')
+        .filter((order: Order) => order.status.toLowerCase() === 'delivered')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setOrders(filteredAndSorted);
     } catch (err) {
