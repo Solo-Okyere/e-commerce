@@ -34,7 +34,7 @@ type AdminOrder = {
   items: OrderItem[];
 };
 
-type RawAdminOrder = Partial<AdminOrder> & { created_at?: string; createdAt?: string };
+type RawAdminOrder = Record<string, unknown>;
 
 function getOrderNumber(order: AdminOrder) {
   return order.order_number || `FSG-${String(order.id).padStart(4, '0')}`;
@@ -52,9 +52,16 @@ function getCustomerName(order: AdminOrder) {
 }
 
 function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
+  const createdAt =
+    typeof order['created_at'] === 'string'
+      ? order['created_at']
+      : typeof order['createdAt'] === 'string'
+      ? order['createdAt']
+      : new Date().toISOString();
+
   return {
-    ...order,
-    createdAt: order?.created_at || order?.createdAt || new Date().toISOString(),
+    ...(order as any),
+    createdAt,
   } as AdminOrder;
 }
 
