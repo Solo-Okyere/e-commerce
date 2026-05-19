@@ -6,6 +6,7 @@ const nextConfig = {
     root: path.resolve(__dirname),
   },
   images: {
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -13,14 +14,15 @@ const nextConfig = {
         pathname: '/**',
       },
       {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
         protocol: 'http',
-        hostname: 'localhost',
-        port: '5000',
-        pathname: '/uploads/**',
+        hostname: '**',
       },
     ],
   },
-  allowedDevOrigins: ['172.20.10.2'],
   outputFileTracingRoot: path.resolve(__dirname),
 };
 
