@@ -2,7 +2,33 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const dbPath = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.resolve(__dirname, 'ecommerce.db');
-const db = new sqlite3.Database(dbPath);
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Failed to open SQLite database:', err);
+    process.exit(1);
+  }
+});
+
+function addColumnIfMissing(table, column, definition) {
+  db.get(`PRAGMA table_info(${table})`, (err, row) => {
+    if (err) return console.error(`Failed to read schema for ${table}:`, err);
+  });
+
+  db.all(`PRAGMA table_info(${table})`, (err, rows) => {
+    if (err) {
+      return console.error(`Failed to read schema for ${table}:`, err);
+    }
+
+    const exists = rows.some((row) => row.name === column);
+    if (!exists) {
+      db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`, (alterErr) => {
+        if (alterErr) {
+          console.error(`Failed to add column ${column} to ${table}:`, alterErr.message);
+        }
+      });
+    }
+  });
+}
 
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -32,9 +58,9 @@ db.serialize(() => {
     FOREIGN KEY (category_id) REFERENCES categories(id)
   )`);
 
-  db.run("ALTER TABLE products ADD COLUMN sizes TEXT DEFAULT 's,m,l,xl,xxl'", () => {});
+  addColumnIfMissing('products', 'sizes', "TEXT DEFAULT 's,m,l,xl,xxl'");
 
-db.run(`CREATE TABLE IF NOT EXISTS orders (
+  db.run(`CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     order_number TEXT UNIQUE,
     user_id INTEGER,
@@ -68,14 +94,13 @@ db.run(`CREATE TABLE IF NOT EXISTS orders (
     FOREIGN KEY (product_id) REFERENCES products(id)
   )`);
 
-  db.run("ALTER TABLE orders ADD COLUMN order_number TEXT", () => {});
-
-  db.run("ALTER TABLE order_items ADD COLUMN size TEXT", () => {});
-  db.run("ALTER TABLE cart_items ADD COLUMN size TEXT", () => {});
+  addColumnIfMissing('orders', 'order_number', 'TEXT');
+  addColumnIfMissing('order_items', 'size', 'TEXT');
+  addColumnIfMissing('cart_items', 'size', 'TEXT');
 
   // Seed data
   db.get("SELECT COUNT(*) as count FROM categories", (err, row) => {
-    if (row.count === 0) {
+    if (!err && row && row.count === 0) {
       db.run("INSERT INTO categories (name, description) VALUES (?, ?)", ['Women', 'Women clothing and accessories']);
       db.run("INSERT INTO categories (name, description) VALUES (?, ?)", ['Men', 'Men clothing and accessories']);
       db.run("INSERT INTO categories (name, description) VALUES (?, ?)", ['Boutique', 'Curated boutique pieces']);
@@ -83,7 +108,7 @@ db.run(`CREATE TABLE IF NOT EXISTS orders (
   });
 
   db.get("SELECT COUNT(*) as count FROM products", (err, row) => {
-    if (row.count === 0) {
+    if (!err && row && row.count === 0) {
       db.run("INSERT INTO products (name, description, price, image_url, category_id, stock) VALUES (?, ?, ?, ?, ?, ?)",
         ['Floral Midi Dress', 'A comfortable floral dress for everyday wear.', 49.99, 'https://via.placeholder.com/400x400?text=Floral+Midi+Dress', 1, 22]);
       db.run("INSERT INTO products (name, description, price, image_url, category_id, stock) VALUES (?, ?, ?, ?, ?, ?)",
@@ -93,15 +118,12 @@ db.run(`CREATE TABLE IF NOT EXISTS orders (
     }
   });
 
-  // Seed admin user
   db.get("SELECT COUNT(*) as count FROM users WHERE role = 'admin'", (err, row) => {
-    if (row.count === 0) {
-      // Use ADMIN_PASSWORD from environment, or fall back to the current default.
-      // Change ADMIN_PASSWORD in your backend .env file for a stronger admin password.
+    if (!err && row && row.count === 0) {
       const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
       const bcrypt = require('bcryptjs');
-      bcrypt.hash(adminPassword, 10, (err, hashedPassword) => {
-        if (!err) {
+      bcrypt.hash(adminPassword, 10, (hashErr, hashedPassword) => {
+        if (!hashErr) {
           db.run("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
             ['Admin User', 'admin@fosogo.com', hashedPassword, 'admin']);
         }
