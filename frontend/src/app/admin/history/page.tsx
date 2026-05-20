@@ -90,7 +90,7 @@ export default function AdminHistoryPage() {
       setError(null);
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         let allOrders: AdminOrder[] = [];
 
         try {

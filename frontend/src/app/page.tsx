@@ -84,7 +84,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
       // Fetch products
       const productsResponse = await fetch(`${apiUrl}/api/products`);
@@ -132,7 +132,7 @@ export default function Home() {
         const token = getToken();
         if (token) {
          try {
-           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+           const apiUrl = process.env.NEXT_PUBLIC_API_URL;
            const response = await fetch(`${apiUrl}/api/cart`, {
              headers: { Authorization: `Bearer ${token}` },
            });
@@ -188,7 +188,7 @@ export default function Home() {
 
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (url.startsWith('/uploads')) {
       return `${apiUrl}${url}`;
     }
@@ -213,7 +213,7 @@ export default function Home() {
       if (token) {
        // Add via API
        try {
-         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
          const response = await fetch(`${apiUrl}/api/cart`, {
            method: 'POST',
            headers: {

@@ -25,8 +25,22 @@ const productsUploadDir = path.join(uploadsDir, 'products');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 if (!fs.existsSync(productsUploadDir)) fs.mkdirSync(productsUploadDir, { recursive: true });
 
+// CORS — allow only the Render frontend and localhost admin port
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL || 'https://fosogo-na.onrender.com',
+  'http://localhost:8080',
+];
+function corsOrigin(origin, cb) {
+  // Allow same-origin, requests with no Origin header (curl, Postman), and specified origins
+  if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Not allowed by CORS'));
+  }
+}
+
 // Middleware
-app.use(cors());
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 

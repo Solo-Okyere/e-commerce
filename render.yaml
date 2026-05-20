@@ -26,4 +26,4 @@ services:
       - key: PORT
         value: "8080"
       - key: NEXT_PUBLIC_API_URL
-        value: https://ecommerce-backend.onrender.com
+        value: https://fosogo-na.onrender.com

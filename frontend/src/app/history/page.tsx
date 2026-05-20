@@ -45,7 +45,7 @@ export default function HistoryPage() {
 
     try {
       if (token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${apiUrl}/api/payments/orders`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -106,7 +106,7 @@ export default function HistoryPage() {
 
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     return url.startsWith('/uploads') ? `${apiUrl}${url}` : url;
   }
 
