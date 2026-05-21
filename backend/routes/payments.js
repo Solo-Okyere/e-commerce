@@ -109,6 +109,8 @@ router.post('/confirm-momo', async (req, res) => {
     }
 
     res.json({
+      orderId: order.id,
+      orderNumber,
       order: {
         id: order.id,
         order_number: orderNumber,
@@ -124,6 +126,49 @@ router.post('/confirm-momo', async (req, res) => {
   } catch (error) {
     console.error('Mobile money confirmation error:', error);
     res.status(500).json({ message: 'Failed to process mobile money order', error: error.message });
+  }
+});
+
+// Public: sync order statuses for locally stored guest/customer orders
+router.post('/orders/statuses', async (req, res) => {
+  try {
+    const requestedOrders = Array.isArray(req.body?.orders) ? req.body.orders : [];
+    const orders = await db.getCollection('orders');
+
+    const statuses = requestedOrders
+      .map((requestedOrder) => {
+        const id = Number(requestedOrder?.id);
+        const orderNumber = typeof requestedOrder?.order_number === 'string' ? requestedOrder.order_number : null;
+        const shippingAddress =
+          typeof requestedOrder?.shipping_address === 'string' ? requestedOrder.shipping_address : null;
+        const total = Number(requestedOrder?.total);
+
+        const matchedOrder = orders.find((order) => {
+          if (Number.isFinite(id) && order.id === id) return true;
+          if (orderNumber && order.order_number === orderNumber) return true;
+          return (
+            shippingAddress &&
+            Number.isFinite(total) &&
+            order.shipping_address === shippingAddress &&
+            Number(order.total) === total
+          );
+        });
+
+        if (!matchedOrder) return null;
+
+        return {
+          localId: requestedOrder.id,
+          id: matchedOrder.id,
+          order_number: matchedOrder.order_number,
+          status: matchedOrder.status,
+        };
+      })
+      .filter(Boolean);
+
+    res.json({ statuses });
+  } catch (error) {
+    console.error('Order status sync error:', error);
+    res.status(500).json({ message: 'Failed to sync order statuses', error: error.message });
   }
 });
 

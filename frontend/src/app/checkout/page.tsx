@@ -115,12 +115,12 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
         throw new Error(errorMsg);
       }
 
-      const orderId = data.orderId || Date.now();
+      const orderId = data.order?.id || data.orderId || Date.now();
 
       // Build order object for localStorage
       const newOrder = {
         id: orderId,
-        order_number: data.orderNumber || `FSG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(orderId).padStart(4, '0')}`,
+        order_number: data.order?.order_number || data.orderNumber || `FSG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(orderId).padStart(4, '0')}`,
         items: validItems.map(item => {
           const product = items.find(i => i.product_id === item.product_id)?.product;
           return {
@@ -132,7 +132,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
           };
         }),
         total,
-        status: 'Pending',
+        status: data.order?.status || 'pending',
         createdAt: new Date().toISOString(),
         shipping_address: JSON.stringify({ name, phone, address, city }),
         payment_method: 'momo',

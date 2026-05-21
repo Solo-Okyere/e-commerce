@@ -29,6 +29,56 @@ type Order = {
   payment_method: string;
 };
 
+type SyncedOrderStatus = {
+  localId: number | string;
+  id: number;
+  order_number?: string;
+  status: string;
+};
+
+async function syncStoredOrderStatuses(storedOrders: Order[]) {
+  if (storedOrders.length === 0) return storedOrders;
+
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/payments/orders/statuses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orders: storedOrders.map((order) => ({
+          id: order.id,
+          order_number: order.order_number,
+          total: order.total,
+          shipping_address: order.shipping_address,
+        })),
+      }),
+    });
+
+    if (!response.ok) return storedOrders;
+
+    const payload = await response.json();
+    const statusByLocalId = new Map(
+      (payload.statuses as SyncedOrderStatus[] | undefined)?.map((status) => [String(status.localId), status]) || []
+    );
+
+    const syncedOrders = storedOrders.map((order) => {
+      const syncedStatus = statusByLocalId.get(String(order.id));
+      if (!syncedStatus) return order;
+      return {
+        ...order,
+        id: syncedStatus.id,
+        order_number: syncedStatus.order_number || order.order_number,
+        status: syncedStatus.status,
+      };
+    });
+
+    localStorage.setItem('orders', JSON.stringify(syncedOrders));
+    return syncedOrders;
+  } catch {
+    return storedOrders;
+  }
+}
+
 export default function HistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +123,8 @@ export default function HistoryPage() {
       // Fallback to localStorage
       const ordersJson = localStorage.getItem('orders');
       const storedOrders: Order[] = ordersJson ? JSON.parse(ordersJson) : [];
-      const filteredAndSorted = storedOrders
+      const syncedOrders = await syncStoredOrderStatuses(storedOrders);
+      const filteredAndSorted = syncedOrders
         .filter((order: Order) => order.status.toLowerCase() === 'delivered')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setOrders(filteredAndSorted);
