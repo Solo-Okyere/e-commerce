@@ -1,7 +1,8 @@
 services:
-  - type: web_service
+  - type: web
     name: ecommerce-backend
-    env: docker
+    runtime: docker
+    dockerContext: .
     dockerfilePath: backend/Dockerfile
     plan: free
     autoDeploy: true
@@ -14,9 +15,10 @@ services:
       - key: DB_PATH
         value: /data/ecommerce.db
 
-  - type: web_service
+  - type: web
     name: ecommerce-frontend
-    env: docker
+    runtime: docker
+    dockerContext: .
     dockerfilePath: frontend/Dockerfile
     plan: free
     autoDeploy: true
@@ -26,4 +28,9 @@ services:
       - key: PORT
         value: "8080"
       - key: NEXT_PUBLIC_API_URL
-        value: https://fosogo-na.onrender.com
+        value: ""
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: web
+          name: ecommerce-backend
+          property: hostport

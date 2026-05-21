@@ -27,8 +27,12 @@ if (!fs.existsSync(productsUploadDir)) fs.mkdirSync(productsUploadDir, { recursi
 
 // CORS — allow only the Render frontend and localhost admin port
 const ALLOWED_ORIGINS = [
-  process.env.FRONTEND_URL || 'https://fosogo-na.onrender.com',
+  ...(process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'https://fosogo-na.onrender.com')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   'http://localhost:8080',
+  'http://localhost:3000',
 ];
 function corsOrigin(origin, cb) {
   // Allow same-origin, requests with no Origin header (curl, Postman), and specified origins

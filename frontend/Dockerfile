@@ -9,6 +9,6 @@ COPY frontend .
 
 ENV NODE_ENV=production PORT=8080
 EXPOSE 8080
-RUN npm run build --webpack
+RUN npm run build
 
-CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "8080", "--hostname", "0.0.0.0"]
+CMD ["npm", "run", "start"]
