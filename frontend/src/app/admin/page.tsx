@@ -153,12 +153,6 @@ export default function AdminPage() {
 
       if (ordersData.length === 0) {
         ordersData = normalizedStoredOrders;
-      } else if (normalizedStoredOrders.length > 0) {
-        const existingIds = new Set(ordersData.map((order) => order.id));
-        ordersData = [
-          ...ordersData,
-          ...normalizedStoredOrders.filter((order) => !existingIds.has(order.id)),
-        ];
       }
 
       ordersData = ordersData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -288,41 +282,37 @@ export default function AdminPage() {
     setError(null);
 
     try {
-      // Update localStorage directly
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${apiUrl}/api/payments/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.message || `Failed to update order status (${response.status})`);
+      }
+
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.id === orderId ? { ...order, status: newStatus.toLowerCase() } : order
+        )
+      );
+
       const ordersJson = localStorage.getItem('orders');
-      if (!ordersJson) {
-        throw new Error('No orders found');
-      }
-
-      const orders: AdminOrder[] = JSON.parse(ordersJson);
-      const orderIndex = orders.findIndex(o => o.id === orderId);
-
-      if (orderIndex === -1) {
-        throw new Error('Order not found');
-      }
-
-      // Update status
-      orders[orderIndex].status = newStatus;
-      localStorage.setItem('orders', JSON.stringify(orders));
-
-      // Update local state immediately for responsive UI
-      setOrders(orders);
-
-      // Also update via API if needed (optional, for sync)
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        await fetch(`${apiUrl}/api/payments/orders/${orderId}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: newStatus }),
-        });
-      } catch (apiErr) {
-        console.warn('Could not update order status via API (localStorage updated successfully)', apiErr);
+      if (ordersJson) {
+        const storedOrders: AdminOrder[] = JSON.parse(ordersJson);
+        const syncedOrders = storedOrders.map((order) =>
+          order.id === orderId ? { ...order, status: newStatus.toLowerCase() } : order
+        );
+        localStorage.setItem('orders', JSON.stringify(syncedOrders));
       }
 
       setMessage('Order status updated successfully');
+      await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
