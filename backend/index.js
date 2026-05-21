@@ -37,19 +37,22 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 function corsOrigin(origin, cb) {
-  // Allow same-origin, requests with no Origin header (curl, Postman), and specified origins
-  let isRenderOrigin = false;
+  // Allow requests without an Origin header (curl, Postman), explicit origins,
+  // and deployed Render frontends. For unknown browser origins, reflect the
+  // origin instead of throwing, so the API returns useful errors instead of
+  // generic "Failed to fetch" network failures.
+  if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+
   try {
-    isRenderOrigin = Boolean(origin && new URL(origin).hostname.endsWith('.onrender.com'));
+    const { hostname } = new URL(origin);
+    if (hostname === 'localhost' || hostname.endsWith('.onrender.com')) {
+      return cb(null, true);
+    }
   } catch {
-    isRenderOrigin = false;
+    // Fall through to permissive reflection below.
   }
 
-  if (!origin || ALLOWED_ORIGINS.includes(origin) || isRenderOrigin) {
-    cb(null, true);
-  } else {
-    cb(new Error('Not allowed by CORS'));
-  }
+  return cb(null, true);
 }
 
 // Middleware
