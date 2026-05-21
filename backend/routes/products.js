@@ -22,9 +22,25 @@ function getBaseUrl(req) {
 
 function normalizeProductImage(product, req) {
   if (!product) return product;
-  if (product.image_url && product.image_url.startsWith('/uploads')) {
+  if (!product.image_url) return product;
+
+  if (product.image_url.startsWith('/uploads')) {
     return { ...product, image_url: `${getBaseUrl(req)}${product.image_url}` };
   }
+
+  try {
+    const imageUrl = new URL(product.image_url);
+    const isLocalUpload =
+      ['localhost', '127.0.0.1'].includes(imageUrl.hostname) &&
+      imageUrl.pathname.startsWith('/uploads');
+
+    if (isLocalUpload) {
+      return { ...product, image_url: `${getBaseUrl(req)}${imageUrl.pathname}` };
+    }
+  } catch {
+    return product;
+  }
+
   return product;
 }
 

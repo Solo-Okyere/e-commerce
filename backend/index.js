@@ -19,6 +19,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.set('trust proxy', 1);
+
 // Ensure upload directories exist
 const uploadsDir = path.resolve(__dirname, 'uploads');
 const productsUploadDir = path.join(uploadsDir, 'products');
