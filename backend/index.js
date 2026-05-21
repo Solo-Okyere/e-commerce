@@ -38,7 +38,14 @@ const ALLOWED_ORIGINS = [
 ];
 function corsOrigin(origin, cb) {
   // Allow same-origin, requests with no Origin header (curl, Postman), and specified origins
-  if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+  let isRenderOrigin = false;
+  try {
+    isRenderOrigin = Boolean(origin && new URL(origin).hostname.endsWith('.onrender.com'));
+  } catch {
+    isRenderOrigin = false;
+  }
+
+  if (!origin || ALLOWED_ORIGINS.includes(origin) || isRenderOrigin) {
     cb(null, true);
   } else {
     cb(new Error('Not allowed by CORS'));
