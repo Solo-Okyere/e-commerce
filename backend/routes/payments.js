@@ -230,9 +230,11 @@ router.patch('/orders/:id/status', async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    await db.updateItem('orders', id, { status: status.toLowerCase() });
+    const normalizedStatus = status.toLowerCase();
+    await db.updateItem('orders', id, { status: normalizedStatus });
+    const updatedOrder = await db.findById('orders', id);
 
-    res.json({ message: 'Order status updated successfully', order: { ...order, status: status.toLowerCase() } });
+    res.json({ message: 'Order status updated successfully', order: updatedOrder });
   } catch (error) {
     console.error('Update order status error:', error);
     res.status(500).json({ message: 'Failed to update order status', error: error.message });
