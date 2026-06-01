@@ -21,6 +21,35 @@ type Category = {
   description?: string;
 };
 
+type AdminOrderItem = {
+  product_id: number;
+  quantity: number;
+  size?: string;
+  price: number;
+  product?: {
+    id: number;
+    name: string;
+    image_url?: string;
+  } | null;
+};
+
+type AdminOrder = {
+  id: number;
+  order_number?: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
+  total: number;
+  status: string;
+  shipping_address: string;
+  payment_method: string;
+  createdAt: string;
+  items: AdminOrderItem[];
+};
+
 type RawAdminOrder = Record<string, unknown>;
 type AdminView = 'overview' | 'products' | 'orders' | 'add';
 
@@ -45,9 +74,8 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,23 +117,20 @@ export default function AdminPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-      const [productsRes, categoriesRes, usersRes] = await Promise.all([
+      const [productsRes, categoriesRes] = await Promise.all([
         fetch(`${apiUrl}/api/products`),
         fetch(`${apiUrl}/api/categories`),
-        fetch(`${apiUrl}/api/users`),
       ]);
 
-      if (!productsRes.ok || !categoriesRes.ok || !usersRes.ok) {
+      if (!productsRes.ok || !categoriesRes.ok) {
         const errors = [];
         if (!productsRes.ok) errors.push(`products (${productsRes.status})`);
         if (!categoriesRes.ok) errors.push(`categories (${categoriesRes.status})`);
-        if (!usersRes.ok) errors.push(`users (${usersRes.status})`);
         throw new Error(`Failed to load data: ${errors.join(', ')}`);
       }
 
       const productsData = await productsRes.json();
       const categoriesData = await categoriesRes.json();
-      const usersData = await usersRes.json();
 
       let ordersData: AdminOrder[] = [];
       let fetchedOrdersFromApi = false;
@@ -137,7 +162,6 @@ export default function AdminPage() {
 
       setProducts(productsData);
       setCategories(categoriesData);
-      setUsers(usersData);
       setOrders(ordersData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
