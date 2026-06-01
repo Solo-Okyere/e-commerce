@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: ecommerce-backend
+    name: ecommerce-frontend
     runtime: docker
     dockerContext: .
-    dockerfilePath: backend/Dockerfile
+    dockerfilePath: frontend/Dockerfile
     plan: free
     autoDeploy: true
     disk:
@@ -12,36 +12,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DB_PATH
-        value: /data/ecommerce.db
-      - key: ADMIN_EMAIL
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
-      - key: DELIVERY_ESTIMATE
-        value: Estimated delivery is within 3-5 business days after payment confirmation.
-      - key: PAYSTACK_SECRET_KEY
-        sync: false
-      - key: PAYSTACK_CURRENCY
-        value: GHS
-      - key: PAYSTACK_CHANNELS
-        value: mobile_money
-      - key: FRONTEND_URL
-        value: https://fosogo-na.onrender.com
-
-  - type: web
-    name: ecommerce-frontend
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: frontend/Dockerfile
-    plan: free
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
       - key: PORT
         value: "8080"
       - key: NEXT_PUBLIC_API_URL
-        value: https://ecommerce-backend.onrender.com
+        value: http://localhost:5000
