@@ -1,6 +1,9 @@
 const Database = require('better-sqlite3');
+const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
+
+dotenv.config();
 
 const defaultDbPath = fs.existsSync('/var/data')
   ? '/var/data/ecommerce.db'
@@ -49,6 +52,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_number TEXT UNIQUE,
   user_id INTEGER,
+  customer_email TEXT,
   total REAL NOT NULL,
   status TEXT DEFAULT 'pending',
   shipping_address TEXT,
@@ -79,7 +83,23 @@ db.prepare(`CREATE TABLE IF NOT EXISTS cart_items (
   FOREIGN KEY (product_id) REFERENCES products(id)
 )`).run();
 
+db.prepare(`CREATE TABLE IF NOT EXISTS order_email_notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  recipient TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'sending',
+  resend_email_id TEXT,
+  error_message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  sent_at DATETIME,
+  failed_at DATETIME,
+  UNIQUE(order_id, type),
+  FOREIGN KEY (order_id) REFERENCES orders(id)
+)`).run();
+
 addColumnIfMissing('orders', 'order_number', 'TEXT');
+addColumnIfMissing('orders', 'customer_email', 'TEXT');
 addColumnIfMissing('order_items', 'size', 'TEXT');
 addColumnIfMissing('cart_items', 'size', 'TEXT');
 
@@ -141,10 +161,51 @@ const removeItem = (table, id) => {
   return true;
 };
 
+const createEmailNotificationIfMissing = (orderId, type, recipient) => {
+  try {
+    const result = db.prepare(`
+      INSERT INTO order_email_notifications (order_id, type, recipient, status)
+      VALUES (?, ?, ?, 'sending')
+    `).run(orderId, type, recipient);
+
+    return { created: true, id: result.lastInsertRowid };
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return {
+        created: false,
+        notification: db.prepare(`
+          SELECT * FROM order_email_notifications WHERE order_id = ? AND type = ?
+        `).get(orderId, type),
+      };
+    }
+
+    throw error;
+  }
+};
+
+const markEmailNotificationSent = (id, resendEmailId) => {
+  db.prepare(`
+    UPDATE order_email_notifications
+    SET status = 'sent', resend_email_id = ?, sent_at = CURRENT_TIMESTAMP, error_message = NULL
+    WHERE id = ?
+  `).run(resendEmailId || null, id);
+};
+
+const markEmailNotificationFailed = (id, errorMessage) => {
+  db.prepare(`
+    UPDATE order_email_notifications
+    SET status = 'failed', error_message = ?, failed_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(String(errorMessage || 'Unknown email error').slice(0, 1000), id);
+};
+
 module.exports = {
   getCollection,
   findById,
   insertItem,
   updateItem,
   removeItem,
+  createEmailNotificationIfMissing,
+  markEmailNotificationSent,
+  markEmailNotificationFailed,
 };

@@ -1,6 +1,8 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const db = require('../database');
 const authenticate = require('../middleware/auth');
+const { sendOrderNotificationEmails } = require('../services/emailService');
 
 const router = express.Router();
 const ADMIN_MOMO_NUMBER = process.env.ADMIN_MOMO_NUMBER || '233240290207';
@@ -10,22 +12,45 @@ function createOrderNumber(orderId) {
   return `FSG-${datePart}-${String(orderId).padStart(4, '0')}`;
 }
 
+function getOptionalUser(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+
+  try {
+    return jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+  } catch (error) {
+    console.error('Ignoring invalid optional auth token during checkout:', error.message);
+    return null;
+  }
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
 // Confirm mobile money order and create order record
 router.post('/confirm-momo', async (req, res) => {
   try {
-    const { name, phone, shippingAddress, city, items } = req.body;
+    const optionalUser = getOptionalUser(req);
+    const { name, phone, email, shippingAddress, city, items } = req.body;
+    const customerEmail = String(email || optionalUser?.email || '').trim().toLowerCase();
 
     // Validate required fields
-    if (!name || !phone || !shippingAddress || !city) {
+    if (!name || !phone || !customerEmail || !shippingAddress || !city) {
       return res.status(400).json({ 
         message: 'Missing required contact information',
         missing: {
           name: !name,
           phone: !phone,
+          email: !customerEmail,
           shippingAddress: !shippingAddress,
           city: !city
         }
       });
+    }
+
+    if (!isValidEmail(customerEmail)) {
+      return res.status(400).json({ message: 'A valid email address is required for order confirmation.' });
     }
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -64,23 +89,27 @@ router.post('/confirm-momo', async (req, res) => {
       total += (product.price || 0) * item.quantity;
       orderItems.push({
         product_id: item.product_id,
+        product_name: product.name,
         quantity: item.quantity,
         size: item.size ? String(item.size).trim().toLowerCase() : '',
         price: product.price || 0,
       });
     }
 
+    const shippingDetails = { name, phone, email: customerEmail, address: shippingAddress, city };
     const order = await db.insertItem('orders', {
-      user_id: req.user?.id || null,
+      user_id: optionalUser?.id || null,
+      customer_email: customerEmail,
       total,
       status: 'pending',
-      shipping_address: JSON.stringify({ name, phone, address: shippingAddress, city }),
+      shipping_address: JSON.stringify(shippingDetails),
       payment_method: 'momo',
       currency: 'GHS',
     });
 
     const orderNumber = createOrderNumber(order.id);
     await db.updateItem('orders', order.id, { order_number: orderNumber });
+    const savedOrder = await db.findById('orders', order.id);
 
     for (const item of orderItems) {
       await db.insertItem('order_items', {
@@ -100,24 +129,30 @@ router.post('/confirm-momo', async (req, res) => {
     }
 
     // Clear cart if user is logged in
-    if (req.user?.id) {
+    if (optionalUser?.id) {
       const cartItems = await db.getCollection('cart_items');
-      const userCart = cartItems.filter(item => item.user_id === req.user.id);
+      const userCart = cartItems.filter(item => item.user_id === optionalUser.id);
       for (const cartItem of userCart) {
         await db.removeItem('cart_items', cartItem.id);
       }
+    }
+
+    try {
+      await sendOrderNotificationEmails(savedOrder, orderItems, shippingDetails);
+    } catch (emailError) {
+      console.error(`Order ${savedOrder.id} was created, but email notification processing failed:`, emailError);
     }
 
     res.json({
       orderId: order.id,
       orderNumber,
       order: {
-        id: order.id,
-        order_number: orderNumber,
-        total: order.total,
-        status: order.status,
-        shipping_address: order.shipping_address,
-        created_at: order.created_at,
+        id: savedOrder.id,
+        order_number: savedOrder.order_number,
+        total: savedOrder.total,
+        status: savedOrder.status,
+        shipping_address: savedOrder.shipping_address,
+        created_at: savedOrder.created_at,
       },
       items: orderItems,
       momoNumber: ADMIN_MOMO_NUMBER,

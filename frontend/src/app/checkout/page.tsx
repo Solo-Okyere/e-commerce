@@ -39,6 +39,7 @@ type CheckoutFormProps = {
 function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -53,7 +54,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
     setError(null);
     setSuccessMessage(null);
 
-    if (!name || !phone || !address || !city) {
+    if (!name || !email || !phone || !address || !city) {
       setError('Please fill in all shipping and contact fields.');
       return;
     }
@@ -84,6 +85,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
         },
         body: JSON.stringify({
           name,
+          email,
           phone,
           shippingAddress: address,
           city,
@@ -134,7 +136,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
         total,
         status: data.order?.status || 'pending',
         createdAt: new Date().toISOString(),
-        shipping_address: JSON.stringify({ name, phone, address, city }),
+        shipping_address: JSON.stringify({ name, email, phone, address, city }),
         payment_method: 'momo',
       };
 
@@ -150,6 +152,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
       // Clear temporary cart and form state
       localStorage.removeItem('fosogo_cart');
       setName('');
+      setEmail('');
       setPhone('');
       setAddress('');
       setCity('');
@@ -174,6 +177,17 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
            type="text"
            value={name}
            onChange={(e) => setName(e.target.value)}
+           required
+           className="mt-1 block w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none"
+         />
+       </div>
+       <div>
+         <label htmlFor="checkout-email" className="block text-sm font-medium text-gray-700">Email Address</label>
+         <input
+           id="checkout-email"
+           type="email"
+           value={email}
+           onChange={(e) => setEmail(e.target.value)}
            required
            className="mt-1 block w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none"
          />

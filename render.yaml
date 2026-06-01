@@ -14,6 +14,14 @@ services:
         value: production
       - key: DB_PATH
         value: /data/ecommerce.db
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: DELIVERY_ESTIMATE
+        value: Estimated delivery is within 3-5 business days after payment confirmation.
 
   - type: web
     name: ecommerce-frontend
