@@ -76,8 +76,14 @@ function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
 }
 
 const sizeOptions = ['s', 'm', 'l', 'xl', 'xxl'];
+const adminAccessKey = 'evasClosetAdminAccess';
+const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'eva-admin';
 
 export default function AdminPage() {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -196,6 +202,22 @@ export default function AdminPage() {
         ? current.filter((item) => item !== size)
         : [...current, size]
     );
+  }
+
+  function handleAdminLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthError(null);
+
+    if (password !== adminPassword) {
+      setAuthError('Incorrect password. Please try again.');
+      setPassword('');
+      return;
+    }
+
+    sessionStorage.setItem(adminAccessKey, 'granted');
+    setLoading(true);
+    setIsAuthenticated(true);
+    setPassword('');
   }
 
   function normalizeImageUrl(url?: string) {
@@ -347,10 +369,22 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    void Promise.resolve().then(fetchData);
-  }, [fetchData]);
+    const timeout = window.setTimeout(() => {
+      setIsAuthenticated(sessionStorage.getItem(adminAccessKey) === 'granted');
+      setAuthChecked(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    void Promise.resolve().then(fetchData);
+  }, [fetchData, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== 'orders' || !event.newValue) return;
 
@@ -389,9 +423,10 @@ export default function AdminPage() {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('adminOrdersUpdated', handleAdminOrdersUpdated);
     };
-  }, [fetchData]);
+  }, [fetchData, isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (!newOrderAlert) return;
 
     const timeout = window.setTimeout(() => {
@@ -399,16 +434,77 @@ export default function AdminPage() {
       setNewOrderCount(0);
     }, 7000);
     return () => window.clearTimeout(timeout);
-  }, [newOrderAlert]);
+  }, [isAuthenticated, newOrderAlert]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const handleFocus = () => {
       void fetchData();
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [fetchData]);
+  }, [fetchData, isAuthenticated]);
+
+  if (!authChecked || !isAuthenticated) {
+    return (
+      <div className="min-h-screen overflow-hidden bg-[#071312] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.18),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(14,165,233,0.14),transparent_30%),linear-gradient(135deg,#06110f_0%,#0b1f1d_48%,#061014_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-30" />
+        <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
+          <section className="w-full max-w-xl rounded-[2rem] border border-emerald-300/20 bg-black/30 p-6 shadow-2xl shadow-emerald-950/40 backdrop-blur sm:p-10">
+            <div className="text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-300">Eva&apos;s Closet</p>
+              <h1 className="mt-4 text-4xl font-black text-emerald-300 sm:text-6xl">Admin Access</h1>
+              <p className="mt-3 text-lg text-slate-300">Store management control center</p>
+            </div>
+
+            <form onSubmit={handleAdminLogin} className="mt-12 space-y-6">
+              <div>
+                <label htmlFor="admin-password" className="block text-lg font-bold text-white sm:text-2xl">
+                  Enter Admin Password
+                </label>
+                <input
+                  id="admin-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setAuthError(null);
+                  }}
+                  autoComplete="current-password"
+                  autoFocus
+                  required
+                  placeholder="Password"
+                  className="mt-5 block h-16 w-full rounded-2xl border border-emerald-300/45 bg-slate-950/60 px-6 text-lg font-semibold text-white shadow-[0_0_0_1px_rgba(52,211,153,0.08),0_18px_50px_rgba(0,0,0,0.35)] outline-none transition placeholder:text-slate-500 focus:border-emerald-300 focus:ring-4 focus:ring-emerald-300/15"
+                />
+                {authError && (
+                  <p className="mt-3 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-100">
+                    {authError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={!authChecked}
+                className="h-16 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-sky-500 px-6 text-lg font-black text-slate-950 shadow-lg shadow-emerald-950/40 transition hover:scale-[1.01] hover:from-emerald-200 hover:to-sky-400 focus:outline-none focus:ring-4 focus:ring-emerald-300/25 disabled:cursor-wait disabled:opacity-70"
+              >
+                Login
+              </button>
+            </form>
+
+            <div className="mt-10 border-t border-white/10 pt-6 text-center">
+              <Link href="/" className="font-semibold text-emerald-300 transition hover:text-emerald-200">
+                Back to Store
+              </Link>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
