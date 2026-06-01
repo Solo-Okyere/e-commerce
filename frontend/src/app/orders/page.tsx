@@ -196,7 +196,7 @@ export default function OrdersPage() {
   };
 
   const handleRefresh = () => {
-    loadOrders();
+    window.location.reload();
   };
 
   return (
