@@ -1,6 +1,6 @@
 "use client";
 
-import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
 type Product = {
@@ -27,6 +27,11 @@ type Order = {
   createdAt: string;
   shipping_address: string;
   payment_method: string;
+};
+
+type RawOrder = Omit<Order, 'createdAt'> & {
+  created_at?: string;
+  createdAt?: string;
 };
 
 type SyncedOrderStatus = {
@@ -107,10 +112,10 @@ export default function HistoryPage() {
           const payload = await response.json();
           throw new Error(payload.message || 'Failed to load orders');
         } else {
-          const data = await response.json();
-          const normalized: Order[] = data.map((o: any) => ({
-            ...o,
-            createdAt: o.created_at || o.createdAt || new Date().toISOString(),
+          const data = (await response.json()) as RawOrder[];
+          const normalized: Order[] = data.map((order) => ({
+            ...order,
+            createdAt: order.created_at || order.createdAt || new Date().toISOString(),
           }))
           // Only include delivered orders for history page
           .filter((order: Order) => order.status.toLowerCase() === 'delivered')
@@ -218,7 +223,7 @@ export default function HistoryPage() {
                       <p className="text-sm text-gray-600">Payment: {order.payment_method}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900">GH₵{order.total.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-gray-900">GHS {order.total.toFixed(2)}</p>
                       <p className="text-sm text-gray-600">{order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
@@ -229,10 +234,13 @@ export default function HistoryPage() {
                       {(order.items || []).map((item) => (
                         <div key={`${item.product_id}-${item.size || 'no-size'}`} className="flex items-center gap-4">
                           {item.product?.image_url && (
-                            <img
-                              src={normalizeImageUrl(item.product.image_url)}
+                            <Image
+                              src={normalizeImageUrl(item.product.image_url)!}
                               alt={item.product.name}
+                              width={64}
+                              height={64}
                               className="h-16 w-16 rounded-lg object-cover"
+                              unoptimized
                             />
                           )}
                           <div className="flex-1">
@@ -241,7 +249,7 @@ export default function HistoryPage() {
                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-gray-900">GH₵{(item.price * item.quantity).toFixed(2)}</p>
+                            <p className="font-semibold text-gray-900">GHS {(item.price * item.quantity).toFixed(2)}</p>
                             <p className="text-sm text-gray-600">per item</p>
                           </div>
                         </div>

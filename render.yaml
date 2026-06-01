@@ -22,6 +22,14 @@ services:
         sync: false
       - key: DELIVERY_ESTIMATE
         value: Estimated delivery is within 3-5 business days after payment confirmation.
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_CURRENCY
+        value: GHS
+      - key: PAYSTACK_CHANNELS
+        value: mobile_money
+      - key: FRONTEND_URL
+        value: https://fosogo-na.onrender.com
 
   - type: web
     name: ecommerce-frontend

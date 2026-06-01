@@ -3,13 +3,22 @@ const jwt = require('jsonwebtoken');
 const db = require('../database');
 const authenticate = require('../middleware/auth');
 const { sendOrderNotificationEmails } = require('../services/emailService');
+const {
+  initializeTransaction,
+  verifyTransaction,
+  verifyWebhookSignature,
+  toMinorUnit,
+} = require('../services/paystackService');
 
 const router = express.Router();
-const ADMIN_MOMO_NUMBER = process.env.ADMIN_MOMO_NUMBER || '233240290207';
 
 function createOrderNumber(orderId) {
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   return `FSG-${datePart}-${String(orderId).padStart(4, '0')}`;
+}
+
+function createPaymentReference(orderId) {
+  return `FSG-${orderId}-${Date.now()}`;
 }
 
 function getOptionalUser(req) {
@@ -28,139 +37,376 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
 }
 
-// Confirm mobile money order and create order record
-router.post('/confirm-momo', async (req, res) => {
+function sanitizeCheckoutKey(value) {
+  const checkoutKey = String(value || '').trim();
+  return checkoutKey && checkoutKey.length <= 120 ? checkoutKey : null;
+}
+
+function getFrontendCallbackUrl() {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  return `${frontendUrl.replace(/\/$/, '')}/payment/callback`;
+}
+
+function parseShippingAddress(order) {
   try {
-    const optionalUser = getOptionalUser(req);
-    const { name, phone, email, shippingAddress, city, items } = req.body;
-    const customerEmail = String(email || optionalUser?.email || '').trim().toLowerCase();
+    return JSON.parse(order.shipping_address || '{}');
+  } catch {
+    return {};
+  }
+}
 
-    // Validate required fields
-    if (!name || !phone || !customerEmail || !shippingAddress || !city) {
-      return res.status(400).json({ 
-        message: 'Missing required contact information',
-        missing: {
-          name: !name,
-          phone: !phone,
-          email: !customerEmail,
-          shippingAddress: !shippingAddress,
-          city: !city
-        }
+async function getOrderItemsForEmail(orderId) {
+  const orderItems = await db.getCollection('order_items');
+  return Promise.all(
+    orderItems
+      .filter((item) => item.order_id === orderId)
+      .map(async (item) => {
+        const product = await db.findById('products', item.product_id);
+        return {
+          ...item,
+          product_name: product?.name || 'Product',
+          product: product
+            ? {
+                id: product.id,
+                name: product.name,
+                image_url: product.image_url,
+              }
+            : null,
+        };
+      })
+  );
+}
+
+async function decrementStockForPaidOrder(orderId) {
+  const orderItems = await db.getCollection('order_items');
+  const items = orderItems.filter((item) => item.order_id === orderId);
+
+  for (const item of items) {
+    const product = await db.findById('products', item.product_id);
+    if (!product) continue;
+
+    const newStock = Math.max(0, Number(product.stock || 0) - Number(item.quantity || 0));
+    await db.updateItem('products', item.product_id, { stock: newStock });
+  }
+}
+
+async function clearUserCart(userId) {
+  if (!userId) return;
+
+  const cartItems = await db.getCollection('cart_items');
+  const userCart = cartItems.filter((item) => item.user_id === userId);
+  for (const cartItem of userCart) {
+    await db.removeItem('cart_items', cartItem.id);
+  }
+}
+
+async function createOrReusePendingOrder(req) {
+  const optionalUser = getOptionalUser(req);
+  const { name, phone, email, shippingAddress, city, items, checkoutKey } = req.body;
+  const customerEmail = String(email || optionalUser?.email || '').trim().toLowerCase();
+  const normalizedCheckoutKey = sanitizeCheckoutKey(checkoutKey);
+
+  if (!name || !phone || !customerEmail || !shippingAddress || !city) {
+    const error = new Error('Missing required checkout information.');
+    error.statusCode = 400;
+    error.details = {
+      name: !name,
+      phone: !phone,
+      email: !customerEmail,
+      shippingAddress: !shippingAddress,
+      city: !city,
+    };
+    throw error;
+  }
+
+  if (!isValidEmail(customerEmail)) {
+    const error = new Error('A valid email address is required for payment.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    const error = new Error('Cart is empty. Add items to cart before checkout.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const existingOrder = normalizedCheckoutKey ? await db.findOrderByCheckoutKey(normalizedCheckoutKey) : null;
+  if (existingOrder && existingOrder.status === 'paid') {
+    return { order: existingOrder, items: await getOrderItemsForEmail(existingOrder.id), reused: true };
+  }
+
+  if (existingOrder && existingOrder.status === 'pending') {
+    return { order: existingOrder, items: await getOrderItemsForEmail(existingOrder.id), reused: true };
+  }
+
+  if (existingOrder && existingOrder.status === 'failed') {
+    return { order: existingOrder, items: await getOrderItemsForEmail(existingOrder.id), reused: true };
+  }
+
+  let total = 0;
+  const orderItems = [];
+
+  for (const item of items) {
+    const productId = Number(item.product_id);
+    const quantity = Number(item.quantity);
+
+    if (!Number.isInteger(productId) || !Number.isInteger(quantity) || quantity <= 0) {
+      const error = new Error('Invalid cart item.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const product = await db.findById('products', productId);
+    if (!product) {
+      const error = new Error(`Product ${productId} not found in database.`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (Number(product.stock || 0) < quantity) {
+      const error = new Error(`Insufficient stock for ${product.name}. Available: ${product.stock || 0}, Required: ${quantity}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    total += Number(product.price || 0) * quantity;
+    orderItems.push({
+      product_id: productId,
+      product_name: product.name,
+      quantity,
+      size: item.size ? String(item.size).trim().toLowerCase() : '',
+      price: Number(product.price || 0),
+    });
+  }
+
+  const shippingDetails = { name, phone, email: customerEmail, address: shippingAddress, city };
+  const order = await db.insertItem('orders', {
+    user_id: optionalUser?.id || null,
+    customer_email: customerEmail,
+    checkout_key: normalizedCheckoutKey,
+    total,
+    status: 'pending',
+    shipping_address: JSON.stringify(shippingDetails),
+    payment_method: 'paystack_mobile_money',
+    payment_provider: 'paystack',
+    payment_status: 'pending',
+    currency: process.env.PAYSTACK_CURRENCY || 'GHS',
+  });
+
+  const orderNumber = createOrderNumber(order.id);
+  await db.updateItem('orders', order.id, { order_number: orderNumber });
+
+  for (const item of orderItems) {
+    await db.insertItem('order_items', {
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      size: item.size,
+      price: item.price,
+    });
+  }
+
+  const savedOrder = await db.findById('orders', order.id);
+  return { order: savedOrder, items: orderItems, reused: false };
+}
+
+async function sendPaidOrderEmails(order) {
+  const items = await getOrderItemsForEmail(order.id);
+  const shippingAddress = parseShippingAddress(order);
+
+  try {
+    await sendOrderNotificationEmails(order, items, shippingAddress);
+  } catch (emailError) {
+    console.error(`Order ${order.id} was paid, but email notification processing failed:`, emailError);
+  }
+}
+
+async function markOrderPaidFromPaystack(reference, paystackData) {
+  const order = await db.findOrderByPaymentReference(reference);
+  if (!order) {
+    throw new Error(`No order found for Paystack reference ${reference}`);
+  }
+
+  const verifiedAmount = Number(paystackData.amount || 0);
+  const expectedAmount = toMinorUnit(order.total);
+  if (verifiedAmount !== expectedAmount) {
+    await db.updateItem('orders', order.id, {
+      status: 'failed',
+      payment_status: 'amount_mismatch',
+      payment_details: JSON.stringify(paystackData),
+    });
+    await db.updatePaymentTransaction(reference, {
+      status: 'amount_mismatch',
+      provider_response: JSON.stringify(paystackData),
+    });
+    throw new Error(`Paystack amount mismatch for order ${order.id}. Expected ${expectedAmount}, got ${verifiedAmount}.`);
+  }
+
+  if (order.status === 'paid') {
+    await sendPaidOrderEmails(order);
+    return db.findById('orders', order.id);
+  }
+
+  await decrementStockForPaidOrder(order.id);
+  await db.updateItem('orders', order.id, {
+    status: 'paid',
+    payment_status: 'success',
+    payment_details: JSON.stringify(paystackData),
+    paid_at: new Date().toISOString(),
+  });
+  await db.updatePaymentTransaction(reference, {
+    status: 'success',
+    provider_response: JSON.stringify(paystackData),
+  });
+  await clearUserCart(order.user_id);
+
+  const paidOrder = await db.findById('orders', order.id);
+  await sendPaidOrderEmails(paidOrder);
+  return paidOrder;
+}
+
+async function markOrderFailedFromPaystack(reference, paystackData) {
+  const order = await db.findOrderByPaymentReference(reference);
+  if (!order || order.status === 'paid') return order;
+
+  await db.updateItem('orders', order.id, {
+    status: 'failed',
+    payment_status: paystackData?.status || 'failed',
+    payment_details: JSON.stringify(paystackData || {}),
+  });
+  await db.updatePaymentTransaction(reference, {
+    status: paystackData?.status || 'failed',
+    provider_response: JSON.stringify(paystackData || {}),
+  });
+
+  return db.findById('orders', order.id);
+}
+
+async function initializePaystackPayment(req, res) {
+  try {
+    const { order } = await createOrReusePendingOrder(req);
+    if (order.status === 'paid') {
+      return res.json({ order, paid: true, message: 'Order is already paid.' });
+    }
+
+    const existingTransactions = await db.getCollection('payment_transactions');
+    const existingTransaction = existingTransactions.find(
+      (transaction) =>
+        transaction.order_id === order.id &&
+        transaction.status === 'pending' &&
+        transaction.authorization_url
+    );
+
+    if (existingTransaction) {
+      return res.json({
+        order,
+        reference: existingTransaction.reference,
+        authorizationUrl: existingTransaction.authorization_url,
+        accessCode: existingTransaction.access_code,
       });
     }
 
-    if (!isValidEmail(customerEmail)) {
-      return res.status(400).json({ message: 'A valid email address is required for order confirmation.' });
-    }
-
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ 
-        message: 'Cart is empty. Add items to cart before checkout.' 
-      });
-    }
-
-    let total = 0;
-    const orderItems = [];
-
-    for (const item of items) {
-      // Validate item structure
-      if (!item.product_id) {
-        return res.status(400).json({ 
-          message: `Invalid item in cart: missing product_id`,
-          item 
-        });
-      }
-
-      // Check if product exists and has enough stock
-      const product = await db.findById('products', item.product_id);
-      if (!product) {
-        return res.status(400).json({ 
-          message: `Product ${item.product_id} not found in database` 
-        });
-      }
-
-      const productStock = product.stock || 0;
-      if (productStock < item.quantity) {
-        return res.status(400).json({ 
-          message: `Insufficient stock for ${product.name}. Available: ${productStock}, Required: ${item.quantity}` 
-        });
-      }
-
-      total += (product.price || 0) * item.quantity;
-      orderItems.push({
-        product_id: item.product_id,
-        product_name: product.name,
-        quantity: item.quantity,
-        size: item.size ? String(item.size).trim().toLowerCase() : '',
-        price: product.price || 0,
-      });
-    }
-
-    const shippingDetails = { name, phone, email: customerEmail, address: shippingAddress, city };
-    const order = await db.insertItem('orders', {
-      user_id: optionalUser?.id || null,
-      customer_email: customerEmail,
-      total,
-      status: 'pending',
-      shipping_address: JSON.stringify(shippingDetails),
-      payment_method: 'momo',
-      currency: 'GHS',
+    const shippingAddress = parseShippingAddress(order);
+    const reference = createPaymentReference(order.id);
+    const response = await initializeTransaction({
+      email: order.customer_email,
+      amount: order.total,
+      phone: shippingAddress.phone,
+      reference,
+      callbackUrl: getFrontendCallbackUrl(),
+      order,
     });
 
-    const orderNumber = createOrderNumber(order.id);
-    await db.updateItem('orders', order.id, { order_number: orderNumber });
-    const savedOrder = await db.findById('orders', order.id);
-
-    for (const item of orderItems) {
-      await db.insertItem('order_items', {
-        order_id: order.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        size: item.size,
-        price: item.price,
-      });
-
-      // Update stock - use the accumulated reduction to avoid race condition
-      const product = await db.findById('products', item.product_id);
-      const newStock = Math.max(0, (product.stock || 0) - item.quantity);
-      await db.updateItem('products', item.product_id, {
-        stock: newStock,
-      });
-    }
-
-    // Clear cart if user is logged in
-    if (optionalUser?.id) {
-      const cartItems = await db.getCollection('cart_items');
-      const userCart = cartItems.filter(item => item.user_id === optionalUser.id);
-      for (const cartItem of userCart) {
-        await db.removeItem('cart_items', cartItem.id);
-      }
-    }
-
-    try {
-      await sendOrderNotificationEmails(savedOrder, orderItems, shippingDetails);
-    } catch (emailError) {
-      console.error(`Order ${savedOrder.id} was created, but email notification processing failed:`, emailError);
-    }
+    await db.updateItem('orders', order.id, {
+      status: 'pending',
+      payment_provider: 'paystack',
+      payment_method: 'paystack_mobile_money',
+      payment_reference: reference,
+      payment_status: 'initialized',
+    });
+    await db.upsertPaymentTransaction({
+      order_id: order.id,
+      provider: 'paystack',
+      reference,
+      status: 'pending',
+      amount: order.total,
+      currency: order.currency || 'GHS',
+      authorization_url: response.data.authorization_url,
+      access_code: response.data.access_code,
+      provider_response: JSON.stringify(response.data),
+    });
 
     res.json({
-      orderId: order.id,
-      orderNumber,
-      order: {
-        id: savedOrder.id,
-        order_number: savedOrder.order_number,
-        total: savedOrder.total,
-        status: savedOrder.status,
-        shipping_address: savedOrder.shipping_address,
-        created_at: savedOrder.created_at,
-      },
-      items: orderItems,
-      momoNumber: ADMIN_MOMO_NUMBER,
-      message: `Send GH₵${total.toFixed(2)} to ${ADMIN_MOMO_NUMBER} via mobile money and then confirm your order.`,
+      order: await db.findById('orders', order.id),
+      reference,
+      authorizationUrl: response.data.authorization_url,
+      accessCode: response.data.access_code,
     });
   } catch (error) {
-    console.error('Mobile money confirmation error:', error);
-    res.status(500).json({ message: 'Failed to process mobile money order', error: error.message });
+    console.error('Paystack initialization error:', error);
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Failed to initialize Paystack payment',
+      missing: error.details,
+    });
+  }
+}
+
+// Create a pending order and initialize Paystack Mobile Money checkout.
+router.post('/paystack/initialize', initializePaystackPayment);
+
+// Backward-compatible route name for older frontend clients.
+router.post('/confirm-momo', initializePaystackPayment);
+
+router.get('/paystack/verify/:reference', async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const response = await verifyTransaction(reference);
+    const paystackData = response.data;
+
+    if (paystackData.status === 'success') {
+      const order = await markOrderPaidFromPaystack(reference, paystackData);
+      return res.json({ status: 'success', order, payment: paystackData });
+    }
+
+    const order = await markOrderFailedFromPaystack(reference, paystackData);
+    res.status(400).json({
+      status: paystackData.status || 'failed',
+      order,
+      message: paystackData.gateway_response || 'Payment was not successful.',
+    });
+  } catch (error) {
+    console.error('Paystack verification error:', error);
+    res.status(500).json({ message: error.message || 'Failed to verify payment' });
+  }
+});
+
+router.post('/paystack/webhook', async (req, res) => {
+  const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
+  const signature = req.headers['x-paystack-signature'];
+
+  if (!verifyWebhookSignature(rawBody, signature)) {
+    return res.status(401).json({ message: 'Invalid Paystack webhook signature.' });
+  }
+
+  try {
+    const event = req.body;
+    const reference = event?.data?.reference;
+    if (!reference) return res.status(200).json({ received: true });
+
+    if (event.event === 'charge.success') {
+      const response = await verifyTransaction(reference);
+      if (response.data.status === 'success') {
+        await markOrderPaidFromPaystack(reference, response.data);
+      }
+    } else if (event.event === 'charge.failed') {
+      await markOrderFailedFromPaystack(reference, event.data);
+    }
+
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('Paystack webhook processing error:', error);
+    res.status(200).json({ received: true });
   }
 });
 
@@ -213,31 +459,11 @@ router.get('/orders', authenticate, async (req, res) => {
     const orders = await db.getCollection('orders');
     const userOrders = orders.filter(order => order.user_id === req.user.id);
 
-    // Get order items for each order
     const ordersWithItems = await Promise.all(
-      userOrders.map(async (order) => {
-        const orderItems = await db.getCollection('order_items');
-        const items = orderItems
-          .filter(item => item.order_id === order.id)
-          .map(async (item) => {
-            const product = await db.findById('products', item.product_id);
-            return {
-              ...item,
-              product: product ? {
-                id: product.id,
-                name: product.name,
-                image_url: product.image_url,
-              } : null,
-            };
-          });
-
-        const resolvedItems = await Promise.all(items);
-
-        return {
-          ...order,
-          items: resolvedItems,
-        };
-      })
+      userOrders.map(async (order) => ({
+        ...order,
+        items: await getOrderItemsForEmail(order.id),
+      }))
     );
 
     res.json(ordersWithItems);
@@ -255,28 +481,11 @@ router.get('/orders/all', async (req, res) => {
 
     const ordersWithItems = await Promise.all(
       orders.map(async (order) => {
-        const orderItems = await db.getCollection('order_items');
-        const items = orderItems
-          .filter(item => item.order_id === order.id)
-          .map(async (item) => {
-            const product = await db.findById('products', item.product_id);
-            return {
-              ...item,
-              product: product ? {
-                id: product.id,
-                name: product.name,
-                image_url: product.image_url,
-              } : null,
-            };
-          });
-
-        const resolvedItems = await Promise.all(items);
         const user = users.find(u => u.id === order.user_id);
-
         return {
           ...order,
           user: user ? { id: user.id, name: user.name, email: user.email, role: user.role } : null,
-          items: resolvedItems,
+          items: await getOrderItemsForEmail(order.id),
         };
       })
     );
@@ -298,10 +507,10 @@ router.patch('/orders/:id/status', async (req, res) => {
       return res.status(400).json({ message: 'Status is required' });
     }
 
-    const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const allowedStatuses = ['pending', 'processing', 'paid', 'failed', 'shipped', 'delivered', 'cancelled'];
     if (!allowedStatuses.includes(status.toLowerCase())) {
-      return res.status(400).json({ 
-        message: `Invalid status. Allowed values: ${allowedStatuses.join(', ')}` 
+      return res.status(400).json({
+        message: `Invalid status. Allowed values: ${allowedStatuses.join(', ')}`,
       });
     }
 

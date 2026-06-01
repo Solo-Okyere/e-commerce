@@ -2,7 +2,6 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const db = require('../database');
 const authenticate = require('../middleware/auth');
-const { sendOrderNotificationEmails } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -93,12 +92,6 @@ router.post('/', async (req, res) => {
         .filter((cartItem) => cartItem.user_id === optionalUser.id)
         .map(async (cartItem) => db.removeItem('cart_items', cartItem.id))
     );
-  }
-
-  try {
-    await sendOrderNotificationEmails(savedOrder, orderItems, { ...shippingDetails, email: customerEmail });
-  } catch (emailError) {
-    console.error(`Order ${savedOrder.id} was created, but email notification processing failed:`, emailError);
   }
 
   res.status(201).json({ order: savedOrder, order_items: orderItems });

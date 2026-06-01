@@ -122,13 +122,13 @@ function adminOrderTemplate(order, items, shippingAddress) {
 
   return baseTemplate({
     preheader: `New order ${order.order_number || order.id} requires review.`,
-    title: 'New Order Received',
-    intro: 'A customer has successfully placed an order. Review the details below and prepare fulfillment.',
+    title: 'Paid Order Received',
+    intro: 'A customer has completed payment successfully. Review the details below and prepare fulfillment.',
     details,
     items,
     total: order.total,
     currency: order.currency,
-    footer: 'This notification was generated automatically after the order was saved successfully.',
+    footer: 'This notification was generated automatically after Paystack verified the payment successfully.',
   });
 }
 
@@ -144,7 +144,7 @@ function customerOrderTemplate(order, items) {
   return baseTemplate({
     preheader: `Thanks for your order ${order.order_number || order.id}.`,
     title: 'Thank You For Your Order',
-    intro: 'Thank you for shopping with FOSOGO Closet. We have received your order and will contact you once payment is confirmed and fulfillment begins.',
+    intro: 'Thank you for shopping with FOSOGO Closet. Your payment has been confirmed and fulfillment will begin shortly.',
     details,
     items,
     total: order.total,

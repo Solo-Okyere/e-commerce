@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('path');
 
 const backendOrigin =

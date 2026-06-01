@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState, useCallback } from 'react';
 
 type Product = {
@@ -255,7 +256,7 @@ export default function OrdersPage() {
                       <p className="text-sm text-gray-600">Payment: {order.payment_method}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900">GH₵{order.total.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-gray-900">GHS {order.total.toFixed(2)}</p>
                       <p className="text-sm text-gray-600">{order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}</p>
                       <Link
                         href={`/orders?track=${order.id}`}
@@ -272,10 +273,13 @@ export default function OrdersPage() {
                       {(order.items || []).map((item) => (
                         <div key={`${item.product_id}-${item.size || 'no-size'}`} className="flex items-center gap-4">
                           {item.product?.image_url && (
-                            <img
-                              src={normalizeImageUrl(item.product.image_url)}
+                            <Image
+                              src={normalizeImageUrl(item.product.image_url)!}
                               alt={item.product.name}
+                              width={64}
+                              height={64}
                               className="h-16 w-16 rounded-lg object-cover"
+                              unoptimized
                             />
                           )}
                           <div className="flex-1">
@@ -284,7 +288,7 @@ export default function OrdersPage() {
                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-gray-900">GH₵{(item.price * item.quantity).toFixed(2)}</p>
+                            <p className="font-semibold text-gray-900">GHS {(item.price * item.quantity).toFixed(2)}</p>
                             <p className="text-sm text-gray-600">per item</p>
                           </div>
                         </div>

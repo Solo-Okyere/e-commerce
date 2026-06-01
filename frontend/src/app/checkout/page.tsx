@@ -46,7 +46,18 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const momoNumber = process.env.NEXT_PUBLIC_ADMIN_MOMO_NUMBER || '233240290207';
+
+  function getCheckoutKey() {
+    const existingKey = sessionStorage.getItem('fosogo_checkout_key');
+    if (existingKey) return existingKey;
+
+    const key =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    sessionStorage.setItem('fosogo_checkout_key', key);
+    return key;
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -77,7 +88,8 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/api/payments/confirm-momo`, {
+      const checkoutKey = getCheckoutKey();
+      const response = await fetch(`${apiUrl}/api/payments/paystack/initialize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,6 +101,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
           phone,
           shippingAddress: address,
           city,
+          checkoutKey,
           items: validItems.map(item => ({
             product_id: Number(item.product_id),
             quantity: Number(item.quantity),
@@ -113,11 +126,15 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
       }
 
       if (!response.ok) {
-        const errorMsg = data?.message || data?.error || 'Failed to confirm mobile money payment';
+        const errorMsg = data?.message || data?.error || 'Failed to initialize Paystack payment';
         throw new Error(errorMsg);
       }
 
       const orderId = data.order?.id || data.orderId || Date.now();
+      const authorizationUrl = data.authorizationUrl;
+      if (!authorizationUrl && !data.paid) {
+        throw new Error('Paystack did not return a checkout URL. Please try again.');
+      }
 
       // Build order object for localStorage
       const newOrder = {
@@ -137,31 +154,35 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
         status: data.order?.status || 'pending',
         createdAt: new Date().toISOString(),
         shipping_address: JSON.stringify({ name, email, phone, address, city }),
-        payment_method: 'momo',
+        payment_method: 'paystack_mobile_money',
+        payment_reference: data.reference || data.order?.payment_reference,
       };
 
       // Save to localStorage (customer orders page reads from here)
       const existingOrders = localStorage.getItem('orders');
       const orders: unknown[] = existingOrders ? JSON.parse(existingOrders) : [];
-      orders.unshift(newOrder);
-      localStorage.setItem('orders', JSON.stringify(orders));
+      const nextOrders = orders.filter((order) => {
+        if (typeof order !== 'object' || order === null) return true;
+        return (order as { id?: number }).id !== orderId;
+      });
+      nextOrders.unshift(newOrder);
+      localStorage.setItem('orders', JSON.stringify(nextOrders));
+      sessionStorage.setItem('fosogo_pending_order_id', String(orderId));
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('adminOrdersUpdated'));
       }
 
-      // Clear temporary cart and form state
-      localStorage.removeItem('fosogo_cart');
-      setName('');
-      setEmail('');
-      setPhone('');
-      setAddress('');
-      setCity('');
-      setSuccessMessage('Payment confirmed! Redirecting to the shop...');
-      setProcessing(false);
-      onSuccess?.();
-      setTimeout(() => {
+      if (data.paid) {
+        localStorage.removeItem('fosogo_cart');
+        sessionStorage.removeItem('fosogo_checkout_key');
+        setSuccessMessage('Payment already confirmed. Redirecting...');
+        onSuccess?.();
         router.push('/');
-      }, 2000);
+        return;
+      }
+
+      setSuccessMessage('Redirecting to Paystack secure checkout...');
+      window.location.href = authorizationUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed');
       setProcessing(false);
@@ -230,8 +251,8 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
       {successMessage && <div className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-700">{successMessage}</div>}
 
       <div className="rounded-2xl bg-slate-50 p-4">
-        <p className="text-sm text-gray-600">Pay via Mobile Money to:</p>
-        <p className="mt-1 text-lg font-bold text-gray-900">{momoNumber}</p>
+        <p className="text-sm text-gray-600">Pay securely with Paystack Mobile Money.</p>
+        <p className="mt-1 text-sm font-semibold text-gray-900">MTN, Telecel/Vodafone Cash, and AirtelTigo are shown when available.</p>
       </div>
 
       <button
@@ -239,7 +260,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
         disabled={processing}
         className="w-full rounded-2xl bg-gray-900 px-5 py-3 text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-400"
       >
-        {processing ? 'Confirming order…' : `Confirm order and pay GH₵${total.toFixed(2)}`}
+        {processing ? 'Opening Paystack...' : `Pay Now - GHS ${total.toFixed(2)}`}
       </button>
     </form>
   );
@@ -321,7 +342,7 @@ export default function CheckoutPage() {
        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
-          <p className="mt-2 text-gray-600">Pay with mobile money using the admin&apos;s Ghana cedis number.</p>
+          <p className="mt-2 text-gray-600">Pay securely with Paystack Mobile Money.</p>
         </div>
 
         {loading ? (
@@ -359,13 +380,13 @@ export default function CheckoutPage() {
                          </span>
                        </div>
                        <span className="text-sm font-semibold text-gray-900">
-                         GH₵{(item.product?.price ?? 0).toFixed(2)} x {item.quantity}
+                         GHS {(item.product?.price ?? 0).toFixed(2)} x {item.quantity}
                        </span>
                      </div>
                    ))}
                  </div>
                  <div className="mt-6 border-t border-gray-200 pt-4 text-lg font-semibold text-gray-900">
-                   Total: GH₵{total.toFixed(2)}
+                   Total: GHS {total.toFixed(2)}
                  </div>
               </div>
             </aside>

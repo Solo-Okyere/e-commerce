@@ -53,6 +53,12 @@ db.prepare(`CREATE TABLE IF NOT EXISTS orders (
   order_number TEXT UNIQUE,
   user_id INTEGER,
   customer_email TEXT,
+  checkout_key TEXT,
+  payment_provider TEXT,
+  payment_reference TEXT,
+  payment_status TEXT,
+  payment_details TEXT,
+  paid_at DATETIME,
   total REAL NOT NULL,
   status TEXT DEFAULT 'pending',
   shipping_address TEXT,
@@ -83,6 +89,22 @@ db.prepare(`CREATE TABLE IF NOT EXISTS cart_items (
   FOREIGN KEY (product_id) REFERENCES products(id)
 )`).run();
 
+db.prepare(`CREATE TABLE IF NOT EXISTS payment_transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  provider TEXT NOT NULL,
+  reference TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  amount REAL NOT NULL,
+  currency TEXT DEFAULT 'GHS',
+  authorization_url TEXT,
+  access_code TEXT,
+  provider_response TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id)
+)`).run();
+
 db.prepare(`CREATE TABLE IF NOT EXISTS order_email_notifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id INTEGER NOT NULL,
@@ -100,8 +122,17 @@ db.prepare(`CREATE TABLE IF NOT EXISTS order_email_notifications (
 
 addColumnIfMissing('orders', 'order_number', 'TEXT');
 addColumnIfMissing('orders', 'customer_email', 'TEXT');
+addColumnIfMissing('orders', 'checkout_key', 'TEXT');
+addColumnIfMissing('orders', 'payment_provider', 'TEXT');
+addColumnIfMissing('orders', 'payment_reference', 'TEXT');
+addColumnIfMissing('orders', 'payment_status', 'TEXT');
+addColumnIfMissing('orders', 'payment_details', 'TEXT');
+addColumnIfMissing('orders', 'paid_at', 'DATETIME');
 addColumnIfMissing('order_items', 'size', 'TEXT');
 addColumnIfMissing('cart_items', 'size', 'TEXT');
+
+db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_checkout_key ON orders(checkout_key) WHERE checkout_key IS NOT NULL').run();
+db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_payment_reference ON orders(payment_reference) WHERE payment_reference IS NOT NULL').run();
 
 // Seed data
 const categoriesCount = db.prepare("SELECT COUNT(*) as count FROM categories").get();
@@ -161,6 +192,60 @@ const removeItem = (table, id) => {
   return true;
 };
 
+const findOrderByCheckoutKey = (checkoutKey) => {
+  if (!checkoutKey) return null;
+  return db.prepare('SELECT * FROM orders WHERE checkout_key = ?').get(checkoutKey);
+};
+
+const findOrderByPaymentReference = (reference) => {
+  if (!reference) return null;
+  return db.prepare('SELECT * FROM orders WHERE payment_reference = ?').get(reference);
+};
+
+const upsertPaymentTransaction = (transaction) => {
+  db.prepare(`
+    INSERT INTO payment_transactions (
+      order_id, provider, reference, status, amount, currency, authorization_url,
+      access_code, provider_response, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(reference) DO UPDATE SET
+      status = excluded.status,
+      authorization_url = COALESCE(excluded.authorization_url, payment_transactions.authorization_url),
+      access_code = COALESCE(excluded.access_code, payment_transactions.access_code),
+      provider_response = excluded.provider_response,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(
+    transaction.order_id,
+    transaction.provider,
+    transaction.reference,
+    transaction.status,
+    transaction.amount,
+    transaction.currency,
+    transaction.authorization_url || null,
+    transaction.access_code || null,
+    transaction.provider_response || null
+  );
+
+  return db.prepare('SELECT * FROM payment_transactions WHERE reference = ?').get(transaction.reference);
+};
+
+const updatePaymentTransaction = (reference, updates) => {
+  const allowedKeys = ['status', 'provider_response', 'authorization_url', 'access_code'];
+  const keys = Object.keys(updates).filter((key) => allowedKeys.includes(key));
+  if (keys.length === 0) return db.prepare('SELECT * FROM payment_transactions WHERE reference = ?').get(reference);
+
+  const values = keys.map((key) => updates[key]);
+  const setClause = keys.map((key) => `${key} = ?`).join(', ');
+  db.prepare(`
+    UPDATE payment_transactions
+    SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+    WHERE reference = ?
+  `).run(...values, reference);
+
+  return db.prepare('SELECT * FROM payment_transactions WHERE reference = ?').get(reference);
+};
+
 const createEmailNotificationIfMissing = (orderId, type, recipient) => {
   try {
     const result = db.prepare(`
@@ -205,6 +290,10 @@ module.exports = {
   insertItem,
   updateItem,
   removeItem,
+  findOrderByCheckoutKey,
+  findOrderByPaymentReference,
+  upsertPaymentTransaction,
+  updatePaymentTransaction,
   createEmailNotificationIfMissing,
   markEmailNotificationSent,
   markEmailNotificationFailed,

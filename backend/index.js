@@ -61,7 +61,11 @@ function corsOrigin(origin, cb) {
 
 // Middleware
 app.use(cors({ origin: corsOrigin, credentials: true }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = buffer;
+  },
+}));
 app.use('/uploads', express.static(uploadsDir));
 
 // API routes

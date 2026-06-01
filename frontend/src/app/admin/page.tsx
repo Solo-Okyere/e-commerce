@@ -68,13 +68,14 @@ function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
 }
 
 const sizeOptions = ['s', 'm', 'l', 'xl', 'xxl'];
+const orderStatusOptions = ['pending', 'processing', 'paid', 'failed', 'shipped', 'delivered', 'cancelled'];
 const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'eva-admin';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
-const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -593,7 +594,7 @@ const [products, setProducts] = useState<Product[]>([]);
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">Total Revenue</p>
-              <p className="mt-2 text-3xl font-black text-white">GH₵{totalRevenue.toFixed(2)}</p>
+              <p className="mt-2 text-3xl font-black text-white">GHS {totalRevenue.toFixed(2)}</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">Pending Orders</p>
@@ -769,7 +770,7 @@ const [products, setProducts] = useState<Product[]>([]);
                     <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
                     <p className="text-sm text-gray-600 truncate">{product.description}</p>
                     <div className="flex items-center gap-4 mt-1">
-                      <span className="text-sm font-medium text-gray-900">GH₵{product.price.toFixed(2)}</span>
+                      <span className="text-sm font-medium text-gray-900">GHS {product.price.toFixed(2)}</span>
                       <span className="text-sm text-gray-500">Stock: {product.stock}</span>
                       <span className="text-sm text-gray-500 uppercase">Sizes: {parseSizes(product.sizes).join(', ') || 'None'}</span>
                     </div>
@@ -824,10 +825,11 @@ const [products, setProducts] = useState<Product[]>([]);
                               disabled={updatingOrderId === order.id}
                               className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-gray-900 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                             >
-                              <option value="pending">Pending</option>
-                              <option value="processing">Processing</option>
-                              <option value="shipped">Shipped</option>
-                              <option value="delivered">Delivered</option>
+                              {orderStatusOptions.map((status) => (
+                                <option key={status} value={status}>
+                                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -835,7 +837,7 @@ const [products, setProducts] = useState<Product[]>([]);
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <div>
                           <p className="text-sm text-gray-500">Total</p>
-                          <p className="text-lg font-semibold text-gray-900">GH₵{order.total.toFixed(2)}</p>
+                          <p className="text-lg font-semibold text-gray-900">GHS {order.total.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Shipping</p>
@@ -861,7 +863,7 @@ const [products, setProducts] = useState<Product[]>([]);
                                 {item.size ? <p className="text-sm font-semibold uppercase text-gray-900">Size: {item.size}</p> : null}
                                 <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                               </div>
-                              <p className="text-sm font-semibold text-gray-900">GH₵{(item.price * item.quantity).toFixed(2)}</p>
+                              <p className="text-sm font-semibold text-gray-900">GHS {(item.price * item.quantity).toFixed(2)}</p>
                             </div>
                           ))}
                         </div>

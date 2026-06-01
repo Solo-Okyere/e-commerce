@@ -33,11 +33,8 @@ export default function CartPage() {
 
    useEffect(() => {
      const storedToken = localStorage.getItem('fosogo_token');
-     if (storedToken !== token) {
-       // eslint-disable-next-line react-hooks/set-state-in-effect
-       setToken(storedToken);
-     }
-     // eslint-disable-line react-hooks/exhaustive-deps
+     // eslint-disable-next-line react-hooks/set-state-in-effect
+     setToken(storedToken);
    }, []);
   const [savingItemId, setSavingItemId] = useState<number | null>(null);
   const [removingItemId, setRemovingItemId] = useState<number | null>(null);
@@ -148,14 +145,16 @@ export default function CartPage() {
        }
      } else {
        // Update localStorage
-       setItems((current) => {
+         setItems((current) => {
          const updated = current.map((item) =>
            item.id === itemId ? { ...item, quantity } : item
          );
-          localStorage.setItem('fosogo_cart', JSON.stringify(updated.map((item) => {
-          const { product, ...rest } = item;
-          return rest;
-        })));
+          localStorage.setItem('fosogo_cart', JSON.stringify(updated.map((item) => ({
+            id: item.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            size: item.size || '',
+          }))));
          return updated;
        });
        setMessage('Cart updated successfully.');
@@ -198,7 +197,12 @@ export default function CartPage() {
       // Remove from localStorage
       setItems((current) => {
         const updated = current.filter((item) => item.id !== itemId);
-        localStorage.setItem('fosogo_cart', JSON.stringify(updated.map(({ product: _, ...rest }) => rest)));
+        localStorage.setItem('fosogo_cart', JSON.stringify(updated.map((item) => ({
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          size: item.size || '',
+        }))));
         return updated;
       });
       setMessage('Item removed from cart.');
@@ -248,7 +252,7 @@ export default function CartPage() {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-slate-900">{item.product?.name ?? 'Unknown Product'}</h2>
-                    <p className="mt-2 text-sm text-slate-500">GH₵{(item.product?.price ?? 0).toFixed(2)} each</p>
+                    <p className="mt-2 text-sm text-slate-500">GHS {(item.product?.price ?? 0).toFixed(2)} each</p>
                     {item.size ? (
                       <p className="mt-1 text-sm font-semibold uppercase text-slate-700">Size: {item.size}</p>
                     ) : null}
@@ -260,7 +264,7 @@ export default function CartPage() {
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        −
+                        -
                       </button>
                       <span className="min-w-[2.5rem] text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
                       <button
@@ -277,7 +281,7 @@ export default function CartPage() {
                         onClick={() => removeItem(item.id)}
                         className="ml-4 rounded-full bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {removingItemId === item.id ? 'Removing…' : 'Remove'}
+                        {removingItemId === item.id ? 'Removing...' : 'Remove'}
                       </button>
                     </div>
                   </div>
@@ -285,7 +289,7 @@ export default function CartPage() {
                 <div className="flex flex-col items-start justify-between gap-4 sm:items-end">
                   <div className="text-right">
                     <p className="text-sm text-slate-500">Item total</p>
-                    <p className="text-2xl font-semibold text-slate-900">GH₵{((item.product?.price ?? 0) * item.quantity).toFixed(2)}</p>
+                    <p className="text-2xl font-semibold text-slate-900">GHS {((item.product?.price ?? 0) * item.quantity).toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -294,7 +298,7 @@ export default function CartPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-slate-500">Estimated total</p>
-                  <p className="mt-1 text-3xl font-semibold text-slate-900">GH₵{total.toFixed(2)}</p>
+                  <p className="mt-1 text-3xl font-semibold text-slate-900">GHS {total.toFixed(2)}</p>
                 </div>
                 <Link href="/checkout" className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
                   Checkout now
