@@ -21,44 +21,6 @@ type Category = {
   description?: string;
 };
 
-type AdminUser = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  created_at: string;
-  orderCount: number;
-};
-
-type AdminOrderItem = {
-  product_id: number;
-  quantity: number;
-  size?: string;
-  price: number;
-  product?: {
-    id: number;
-    name: string;
-    image_url?: string;
-  } | null;
-};
-
-type AdminOrder = {
-  id: number;
-  order_number?: string;
-  user?: {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-  } | null;
-  total: number;
-  status: string;
-  shipping_address: string;
-  payment_method: string;
-  createdAt: string;
-  items: AdminOrderItem[];
-};
-
 type RawAdminOrder = Record<string, unknown>;
 type AdminView = 'overview' | 'products' | 'orders' | 'add';
 
@@ -85,7 +47,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -603,7 +565,20 @@ export default function AdminPage() {
           </div>
         )}
 
-        {showAddForm && (
+        {adminView === 'overview' && (
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">Total Revenue</p>
+              <p className="mt-2 text-3xl font-black text-white">GH₵{totalRevenue.toFixed(2)}</p>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">Pending Orders</p>
+              <p className="mt-2 text-3xl font-black text-white">{pendingOrders.length}</p>
+            </div>
+          </div>
+        )}
+
+        {(adminView === 'add' || showAddForm) && (
           <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -744,162 +719,135 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div className="rounded-3xl bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Products ({products.length})</h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {products.map((product) => (
-              <div key={product.id} className="p-6 flex items-center gap-4">
-                <div className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                  {product.image_url && normalizeImageUrl(product.image_url) ? (
-                    <Image
-                      src={normalizeImageUrl(product.image_url)!}
-                      alt={product.name}
-                      width={64}
-                      height={64}
-                      className="h-full w-full object-contain"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">No image</div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
-                  <p className="text-sm text-gray-600 truncate">{product.description}</p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-sm font-medium text-gray-900">GH₵{product.price.toFixed(2)}</span>
-                    <span className="text-sm text-gray-500">Stock: {product.stock}</span>
-                    <span className="text-sm text-gray-500 uppercase">Sizes: {parseSizes(product.sizes).join(', ') || 'None'}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => populateForm(product)}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteProduct(product.id)}
-                    className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Customers section hidden - code preserved */}
-        {false && (
-          <div className="mt-8 rounded-3xl bg-white shadow-sm overflow-hidden">
+        {adminView === 'products' && (
+          <div className="rounded-3xl bg-white shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Customers ({users.length})</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Products ({products.length})</h2>
             </div>
             <div className="divide-y divide-gray-200">
-              {users.length === 0 ? (
-                <div className="p-6 text-gray-600">No customers found.</div>
-              ) : (
-                <div>
-                  {users
-                    .filter(user => !(user.name === 'okyere' && user.email === 'quexipapphlicker@gmail.com'))
-                    .map((user) => (
-                      <div key={user.id} className="p-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-lg font-semibold text-gray-900">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                        <div className="space-y-1 text-sm text-gray-600 text-right">
-                          <p className="font-medium text-gray-900 capitalize">{user.role}</p>
-                          <p>{user.orderCount} {user.orderCount === 1 ? 'order' : 'orders'}</p>
-                        </div>
-                      </div>
-                    ))}
+              {products.map((product) => (
+                <div key={product.id} className="p-6 flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                    {product.image_url && normalizeImageUrl(product.image_url) ? (
+                      <Image
+                        src={normalizeImageUrl(product.image_url)!}
+                        alt={product.name}
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-contain"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">No image</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
+                    <p className="text-sm text-gray-600 truncate">{product.description}</p>
+                    <div className="flex items-center gap-4 mt-1">
+                      <span className="text-sm font-medium text-gray-900">GH₵{product.price.toFixed(2)}</span>
+                      <span className="text-sm text-gray-500">Stock: {product.stock}</span>
+                      <span className="text-sm text-gray-500 uppercase">Sizes: {parseSizes(product.sizes).join(', ') || 'None'}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => populateForm(product)}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteProduct(product.id)}
+                      className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         )}
 
-        <div className="mt-8 rounded-3xl bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Active Orders ({activeOrders.length})
-            </h2>
-            <p className="mt-1 text-sm text-gray-600">Manage pending, processing, and shipped orders.</p>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {activeOrders.length === 0 ? (
-              <div className="p-6 text-gray-600">No active orders found.</div>
-            ) : (
-              activeOrders.map((order) => (
-                  <div key={order.id} className="p-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-gray-500">Order {getOrderNumber(order)}</p>
-                        <p className="font-semibold text-gray-900">{getCustomerName(order)}</p>
+        {adminView === 'orders' && (
+          <div className="mt-8 rounded-3xl bg-white shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Active Orders ({activeOrders.length})
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">Manage pending, processing, and shipped orders.</p>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {activeOrders.length === 0 ? (
+                <div className="p-6 text-gray-600">No active orders found.</div>
+              ) : (
+                activeOrders.map((order) => (
+                    <div key={order.id} className="p-6">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Order {getOrderNumber(order)}</p>
+                          <p className="font-semibold text-gray-900">{getCustomerName(order)}</p>
+                        </div>
+                        <div className="space-y-1 text-right text-sm text-gray-500">
+                          <span>{new Date(order.createdAt).toLocaleString()}</span>
+                          <div className="flex items-center gap-2 justify-end">
+                            <label htmlFor={`order-status-${order.id}`} className="text-xs font-medium text-gray-600">Status:</label>
+                            <select
+                              id={`order-status-${order.id}`}
+                              value={order.status}
+                              onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                              disabled={updatingOrderId === order.id}
+                              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-gray-900 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="processing">Processing</option>
+                              <option value="shipped">Shipped</option>
+                              <option value="delivered">Delivered</option>
+                            </select>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1 text-right text-sm text-gray-500">
-                        <span>{new Date(order.createdAt).toLocaleString()}</span>
-                        <div className="flex items-center gap-2 justify-end">
-                          <label htmlFor={`order-status-${order.id}`} className="text-xs font-medium text-gray-600">Status:</label>
-                          <select
-                            id={`order-status-${order.id}`}
-                            value={order.status}
-                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                            disabled={updatingOrderId === order.id}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-gray-900 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                          </select>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-sm text-gray-500">Total</p>
+                          <p className="text-lg font-semibold text-gray-900">GH₵{order.total.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Shipping</p>
+                          <p className="text-sm text-gray-700">
+                            {(() => {
+                              try {
+                                const addr = JSON.parse(order.shipping_address);
+                                return `${addr.name}, ${addr.phone}, ${addr.address}, ${addr.city}`;
+                              } catch {
+                                return order.shipping_address;
+                              }
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 rounded-3xl bg-slate-50 p-4">
+                        <p className="text-sm font-semibold text-gray-900">Items</p>
+                        <div className="mt-3 space-y-3">
+                          {order.items.map((item) => (
+                            <div key={`${item.product_id}-${item.size || 'no-size'}`} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">{item.product?.name ?? 'Unknown product'}</p>
+                                {item.size ? <p className="text-sm font-semibold uppercase text-gray-900">Size: {item.size}</p> : null}
+                                <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                              </div>
+                              <p className="text-sm font-semibold text-gray-900">GH₵{(item.price * item.quantity).toFixed(2)}</p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-sm text-gray-500">Total</p>
-                        <p className="text-lg font-semibold text-gray-900">GH₵{order.total.toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Shipping</p>
-                        <p className="text-sm text-gray-700">
-                          {(() => {
-                            try {
-                              const addr = JSON.parse(order.shipping_address);
-                              return `${addr.name}, ${addr.phone}, ${addr.address}, ${addr.city}`;
-                            } catch {
-                              return order.shipping_address;
-                            }
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-4 rounded-3xl bg-slate-50 p-4">
-                      <p className="text-sm font-semibold text-gray-900">Items</p>
-                      <div className="mt-3 space-y-3">
-                        {order.items.map((item) => (
-                          <div key={`${item.product_id}-${item.size || 'no-size'}`} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">{item.product?.name ?? 'Unknown product'}</p>
-                              {item.size ? <p className="text-sm font-semibold uppercase text-gray-900">Size: {item.size}</p> : null}
-                              <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                            </div>
-                            <p className="text-sm font-semibold text-gray-900">GH₵{(item.price * item.quantity).toFixed(2)}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))
-            )}
+                  ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
