@@ -76,11 +76,9 @@ function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
 }
 
 const sizeOptions = ['s', 'm', 'l', 'xl', 'xxl'];
-const adminAccessKey = 'evasClosetAdminAccess';
 const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'eva-admin';
 
 export default function AdminPage() {
-  const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -214,7 +212,6 @@ export default function AdminPage() {
       return;
     }
 
-    sessionStorage.setItem(adminAccessKey, 'granted');
     setLoading(true);
     setIsAuthenticated(true);
     setPassword('');
@@ -369,15 +366,6 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setIsAuthenticated(sessionStorage.getItem(adminAccessKey) === 'granted');
-      setAuthChecked(true);
-    }, 0);
-
-    return () => window.clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
     if (!isAuthenticated) return;
     void Promise.resolve().then(fetchData);
   }, [fetchData, isAuthenticated]);
@@ -447,7 +435,7 @@ export default function AdminPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [fetchData, isAuthenticated]);
 
-  if (!authChecked || !isAuthenticated) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen overflow-hidden bg-[#071312] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.18),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(14,165,233,0.14),transparent_30%),linear-gradient(135deg,#06110f_0%,#0b1f1d_48%,#061014_100%)]" />
@@ -488,8 +476,7 @@ export default function AdminPage() {
 
               <button
                 type="submit"
-                disabled={!authChecked}
-                className="h-16 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-sky-500 px-6 text-lg font-black text-slate-950 shadow-lg shadow-emerald-950/40 transition hover:scale-[1.01] hover:from-emerald-200 hover:to-sky-400 focus:outline-none focus:ring-4 focus:ring-emerald-300/25 disabled:cursor-wait disabled:opacity-70"
+                className="h-16 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-sky-500 px-6 text-lg font-black text-slate-950 shadow-lg shadow-emerald-950/40 transition hover:scale-[1.01] hover:from-emerald-200 hover:to-sky-400 focus:outline-none focus:ring-4 focus:ring-emerald-300/25"
               >
                 Login
               </button>
