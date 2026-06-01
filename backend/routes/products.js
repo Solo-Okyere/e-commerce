@@ -1,12 +1,21 @@
 const express = require('express');
 const db = require('../database');
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
+const uploadsDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : fs.existsSync('/var/data')
+  ? '/var/data/uploads'
+  : path.resolve(__dirname, '../uploads');
+const productsUploadDir = path.join(uploadsDir, 'products');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/products/');
+    fs.mkdirSync(productsUploadDir, { recursive: true });
+    cb(null, productsUploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

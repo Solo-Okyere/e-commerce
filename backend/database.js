@@ -1,7 +1,11 @@
 const Database = require('better-sqlite3');
+const fs = require('fs');
 const path = require('path');
 
-const dbPath = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.resolve(__dirname, 'ecommerce.db');
+const defaultDbPath = fs.existsSync('/var/data')
+  ? '/var/data/ecommerce.db'
+  : path.resolve(__dirname, 'ecommerce.db');
+const dbPath = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : defaultDbPath;
 const db = new Database(dbPath);
 
 function addColumnIfMissing(table, column, definition) {

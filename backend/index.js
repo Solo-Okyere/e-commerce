@@ -18,11 +18,15 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const uploadsDir = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : fs.existsSync('/var/data')
+  ? '/var/data/uploads'
+  : path.resolve(__dirname, 'uploads');
 
 app.set('trust proxy', 1);
 
 // Ensure upload directories exist
-const uploadsDir = path.resolve(__dirname, 'uploads');
 const productsUploadDir = path.join(uploadsDir, 'products');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 if (!fs.existsSync(productsUploadDir)) fs.mkdirSync(productsUploadDir, { recursive: true });
@@ -58,7 +62,7 @@ function corsOrigin(origin, cb) {
 // Middleware
 app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(uploadsDir));
 
 // API routes
 app.get('/', (req, res) => {

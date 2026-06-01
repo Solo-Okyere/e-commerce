@@ -60,7 +60,7 @@ function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
       : new Date().toISOString();
 
   return {
-    ...(order as any),
+    ...order,
     createdAt,
   } as AdminOrder;
 }
@@ -92,6 +92,7 @@ export default function AdminHistoryPage() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         let allOrders: AdminOrder[] = [];
+        let fetchedOrdersFromApi = false;
 
         try {
           const response = await fetch(`${apiUrl}/api/payments/orders/all`);
@@ -101,6 +102,7 @@ export default function AdminHistoryPage() {
             allOrders = data
               .map(normalizeAdminOrder)
               .sort((a: AdminOrder, b: AdminOrder) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            fetchedOrdersFromApi = true;
           } else {
             const payload = await response.json();
             console.warn('Admin history order fetch failed, falling back to localStorage:', payload);
@@ -109,7 +111,7 @@ export default function AdminHistoryPage() {
           console.warn('Admin history order fetch failed, falling back to localStorage:', fetchOrdersError);
         }
 
-        if (allOrders.length === 0) {
+        if (!fetchedOrdersFromApi) {
           const stored = localStorage.getItem('orders');
           const ordersJson: RawAdminOrder[] = stored ? JSON.parse(stored) : [];
           allOrders = ordersJson

@@ -60,6 +60,7 @@ type AdminOrder = {
 };
 
 type RawAdminOrder = Record<string, unknown>;
+type AdminView = 'overview' | 'products' | 'orders' | 'add';
 
 function normalizeAdminOrder(order: RawAdminOrder): AdminOrder {
   const createdAt =
@@ -92,6 +93,7 @@ export default function AdminPage() {
   const [newOrderAlert, setNewOrderAlert] = useState(false);
   const [newOrderCount, setNewOrderCount] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [adminView, setAdminView] = useState<AdminView>('overview');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
 
@@ -100,6 +102,14 @@ export default function AdminPage() {
       const status = order.status.toLowerCase();
       return status !== 'delivered' && status !== 'cancelled';
     }),
+    [orders]
+  );
+  const pendingOrders = useMemo(
+    () => orders.filter((order) => order.status.toLowerCase() === 'pending'),
+    [orders]
+  );
+  const totalRevenue = useMemo(
+    () => orders.reduce((sum, order) => sum + Number(order.total || 0), 0),
     [orders]
   );
 
@@ -136,6 +146,7 @@ export default function AdminPage() {
       const usersData = await usersRes.json();
 
       let ordersData: AdminOrder[] = [];
+      let fetchedOrdersFromApi = false;
 
       try {
         const ordersRes = await fetch(`${apiUrl}/api/payments/orders/all`);
@@ -143,6 +154,7 @@ export default function AdminPage() {
         if (ordersRes.ok) {
           const rawOrders: RawAdminOrder[] = await ordersRes.json();
           ordersData = rawOrders.map(normalizeAdminOrder);
+          fetchedOrdersFromApi = true;
         } else {
           const payload = await ordersRes.json();
           console.warn('Admin order fetch failed, falling back to localStorage:', payload);
@@ -155,7 +167,7 @@ export default function AdminPage() {
       const storedOrders: RawAdminOrder[] = ordersJson ? (JSON.parse(ordersJson) as RawAdminOrder[]) : [];
       const normalizedStoredOrders = storedOrders.map(normalizeAdminOrder);
 
-      if (ordersData.length === 0) {
+      if (!fetchedOrdersFromApi) {
         ordersData = normalizedStoredOrders;
       }
 
@@ -268,6 +280,7 @@ export default function AdminPage() {
 
       setMessage(editingProduct ? 'Product updated successfully' : 'Product added successfully');
       resetForm();
+      setAdminView('products');
       fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -352,6 +365,11 @@ export default function AdminPage() {
     setShowAddForm(false);
   }
 
+  function openAddProductForm() {
+    resetForm();
+    setAdminView('add');
+  }
+
   function populateForm(product: Product) {
     setName(product.name);
     setDescription(product.description);
@@ -363,6 +381,7 @@ export default function AdminPage() {
     setSelectedSizes(parseSizes(product.sizes));
     setEditingProduct(product);
     setShowAddForm(true);
+    setAdminView('add');
   }
 
   useEffect(() => {
@@ -437,15 +456,17 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen overflow-hidden bg-[#071312] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.18),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(14,165,233,0.14),transparent_30%),linear-gradient(135deg,#06110f_0%,#0b1f1d_48%,#061014_100%)]" />
+      <div className="min-h-screen overflow-hidden bg-slate-950 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,72,153,0.28),transparent_35%),linear-gradient(315deg,rgba(14,165,233,0.2),transparent_40%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-30" />
         <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
-          <section className="w-full max-w-xl rounded-[2rem] border border-emerald-300/20 bg-black/30 p-6 shadow-2xl shadow-emerald-950/40 backdrop-blur sm:p-10">
+          <section className="w-full max-w-xl rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl shadow-pink-950/30 backdrop-blur sm:p-10">
             <div className="text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-emerald-300">Eva&apos;s Closet</p>
-              <h1 className="mt-4 text-4xl font-black text-emerald-300 sm:text-6xl">Admin Access</h1>
-              <p className="mt-3 text-lg text-slate-300">Store management control center</p>
+              <p className="inline-flex rounded-full bg-white/10 px-4 py-1 text-sm font-semibold uppercase tracking-[0.25em] text-pink-100 ring-1 ring-white/15">
+                FOSOGO Closet
+              </p>
+              <h1 className="mt-5 text-4xl font-black text-white sm:text-6xl">Admin Access</h1>
+              <p className="mt-3 text-lg text-pink-100">Store management control center</p>
             </div>
 
             <form onSubmit={handleAdminLogin} className="mt-12 space-y-6">
@@ -465,7 +486,7 @@ export default function AdminPage() {
                   autoFocus
                   required
                   placeholder="Password"
-                  className="mt-5 block h-16 w-full rounded-2xl border border-emerald-300/45 bg-slate-950/60 px-6 text-lg font-semibold text-white shadow-[0_0_0_1px_rgba(52,211,153,0.08),0_18px_50px_rgba(0,0,0,0.35)] outline-none transition placeholder:text-slate-500 focus:border-emerald-300 focus:ring-4 focus:ring-emerald-300/15"
+                  className="mt-5 block h-16 w-full rounded-2xl border border-white/20 bg-slate-950/55 px-6 text-lg font-semibold text-white shadow-[0_18px_50px_rgba(0,0,0,0.35)] outline-none transition placeholder:text-slate-500 focus:border-pink-200 focus:bg-slate-950/75 focus:ring-4 focus:ring-pink-500/20"
                 />
                 {authError && (
                   <p className="mt-3 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-100">
@@ -476,14 +497,14 @@ export default function AdminPage() {
 
               <button
                 type="submit"
-                className="h-16 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-sky-500 px-6 text-lg font-black text-slate-950 shadow-lg shadow-emerald-950/40 transition hover:scale-[1.01] hover:from-emerald-200 hover:to-sky-400 focus:outline-none focus:ring-4 focus:ring-emerald-300/25"
+                className="h-16 w-full rounded-2xl bg-white px-6 text-lg font-black text-slate-950 shadow-lg shadow-pink-950/30 transition hover:scale-[1.01] hover:bg-pink-100 focus:outline-none focus:ring-4 focus:ring-pink-500/30"
               >
                 Login
               </button>
             </form>
 
             <div className="mt-10 border-t border-white/10 pt-6 text-center">
-              <Link href="/" className="font-semibold text-emerald-300 transition hover:text-emerald-200">
+              <Link href="/" className="font-semibold text-pink-100 transition hover:text-white">
                 Back to Store
               </Link>
             </div>
@@ -495,27 +516,34 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-10">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-white p-8 shadow-sm text-gray-600">Loading admin panel...</div>
+      <div className="min-h-screen bg-slate-950 py-10 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-[2rem] border border-white/10 bg-white/10 p-8 text-slate-200 shadow-2xl shadow-pink-950/20 backdrop-blur">
+            Loading admin dashboard...
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 rounded-3xl bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen overflow-hidden bg-slate-950 py-10 text-white">
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,72,153,0.2),transparent_32%),linear-gradient(315deg,rgba(14,165,233,0.16),transparent_38%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-25" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 border-b border-white/10 pb-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-              <p className="mt-2 text-gray-600">Manage products and inventory.</p>
+              <p className="text-3xl font-black tracking-tight text-white sm:text-4xl">FOSOGO Closet</p>
+              <h1 className="mt-6 bg-gradient-to-r from-pink-300 via-white to-sky-200 bg-clip-text text-4xl font-black text-transparent sm:text-6xl">
+                Admin Dashboard
+              </h1>
+              <p className="mt-3 text-lg text-slate-300">Manage your e-commerce platform</p>
               {newOrderAlert && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-900">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-pink-500/15 px-4 py-2 text-sm font-semibold text-pink-100 ring-1 ring-pink-300/25">
                   <span>New order received</span>
                   {newOrderCount > 0 && (
-                    <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-emerald-900 px-2 text-xs text-white">
+                    <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-full bg-white px-2 text-xs text-slate-950">
                       {newOrderCount}
                     </span>
                   )}
@@ -525,17 +553,41 @@ export default function AdminPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/admin/history"
-                className="rounded-2xl border border-gray-300 bg-white px-6 py-3 text-gray-900 transition hover:border-gray-900 hover:bg-gray-100"
+                className="rounded-full border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/15 hover:text-white"
               >
                 Order History
               </Link>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="rounded-2xl bg-gray-900 px-6 py-3 text-white transition hover:bg-black"
+              <Link
+                href="/"
+                className="rounded-full border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/15 hover:text-white"
               >
-                {showAddForm ? 'Cancel' : 'Add Product'}
-              </button>
+                Back to Store
+              </Link>
             </div>
+          </div>
+        </div>
+
+        <div className="mb-8 rounded-[2rem] border border-white/10 bg-white/5 p-2 backdrop-blur">
+          <div className="grid gap-2 sm:grid-cols-4">
+            {[
+              { id: 'overview' as AdminView, label: 'Overview' },
+              { id: 'products' as AdminView, label: 'Products' },
+              { id: 'orders' as AdminView, label: 'Orders' },
+              { id: 'add' as AdminView, label: editingProduct ? 'Edit Product' : 'Add Product' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => (tab.id === 'add' ? openAddProductForm() : setAdminView(tab.id))}
+                className={`rounded-2xl px-5 py-4 text-sm font-bold transition ${
+                  adminView === tab.id
+                    ? 'bg-white text-slate-950 shadow-lg shadow-pink-950/20'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
