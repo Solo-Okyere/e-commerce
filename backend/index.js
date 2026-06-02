@@ -14,7 +14,23 @@ const cartRoutes = require('./routes/cart');
 const paymentRoutes = require('./routes/payments');
 const userRoutes = require('./routes/users');
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+const paystackKey =
+  process.env.PAYSTACK_SECRET_KEY ||
+  (process.env.NODE_ENV === 'production'
+    ? process.env.PAYSTACK_LIVE_SECRET_KEY
+    : process.env.PAYSTACK_TEST_SECRET_KEY) ||
+  process.env.PAYSTACK_LIVE_SECRET_KEY ||
+  process.env.PAYSTACK_TEST_SECRET_KEY;
+
+if (paystackKey) {
+  process.env.PAYSTACK_SECRET_KEY = paystackKey;
+} else {
+  console.warn(
+    'Warning: Paystack secret key is not configured. Paystack payment initialization will fail until PAYSTACK_SECRET_KEY or PAYSTACK_TEST_SECRET_KEY is set.'
+  );
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;

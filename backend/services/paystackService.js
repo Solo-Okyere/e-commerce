@@ -1,10 +1,17 @@
 const crypto = require('crypto');
+const path = require('path');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const PAYSTACK_BASE_URL = 'https://api.paystack.co';
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co';
+const PAYSTACK_SECRET_KEY =
+  process.env.PAYSTACK_SECRET_KEY ||
+  (process.env.NODE_ENV === 'production'
+    ? process.env.PAYSTACK_LIVE_SECRET_KEY
+    : process.env.PAYSTACK_TEST_SECRET_KEY) ||
+  process.env.PAYSTACK_LIVE_SECRET_KEY ||
+  process.env.PAYSTACK_TEST_SECRET_KEY;
 const PAYSTACK_CURRENCY = process.env.PAYSTACK_CURRENCY || 'GHS';
 const PAYSTACK_CHANNELS = (process.env.PAYSTACK_CHANNELS || 'mobile_money')
   .split(',')
@@ -13,7 +20,9 @@ const PAYSTACK_CHANNELS = (process.env.PAYSTACK_CHANNELS || 'mobile_money')
 
 function ensurePaystackConfigured() {
   if (!PAYSTACK_SECRET_KEY) {
-    throw new Error('PAYSTACK_SECRET_KEY is not configured.');
+    throw new Error(
+      'Paystack secret key is not configured. Set PAYSTACK_SECRET_KEY, PAYSTACK_TEST_SECRET_KEY, or PAYSTACK_LIVE_SECRET_KEY in backend/.env or the deployment environment.'
+    );
   }
 }
 

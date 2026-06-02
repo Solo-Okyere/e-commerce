@@ -43,6 +43,9 @@ function sanitizeCheckoutKey(value) {
 }
 
 function getFrontendCallbackUrl() {
+  const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
+  if (callbackUrl) return callbackUrl;
+
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   return `${frontendUrl.replace(/\/$/, '')}/payment/callback`;
 }
