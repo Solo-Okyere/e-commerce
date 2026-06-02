@@ -43,8 +43,13 @@ function sanitizeCheckoutKey(value) {
 }
 
 function getFrontendCallbackUrl() {
-  const callbackUrl = process.env.PAYSTACK_CALLBACK_URL;
-  if (callbackUrl) return callbackUrl;
+  const callbackUrl = String(process.env.PAYSTACK_CALLBACK_URL || '').trim();
+  if (callbackUrl) {
+    if (callbackUrl.includes('/payment/success')) {
+      return callbackUrl.replace(/\/payment\/success\/?$/, '/payment/callback');
+    }
+    return callbackUrl;
+  }
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   return `${frontendUrl.replace(/\/$/, '')}/payment/callback`;
@@ -360,6 +365,24 @@ router.post('/paystack/initialize', initializePaystackPayment);
 
 // Backward-compatible route name for older frontend clients.
 router.post('/confirm-momo', initializePaystackPayment);
+
+router.get('/paystack/config', (req, res) => {
+  const secretKey = String(process.env.PAYSTACK_SECRET_KEY || '');
+  const keyType = secretKey.startsWith('sk_live_')
+    ? 'live'
+    : secretKey.startsWith('sk_test_')
+    ? 'test'
+    : secretKey
+    ? 'unknown'
+    : null;
+
+  res.json({
+    paystackConfigured: Boolean(secretKey),
+    keyType,
+    callbackUrl: getFrontendCallbackUrl(),
+    paystackBaseUrl: process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co',
+  });
+});
 
 router.get('/paystack/verify/:reference', async (req, res) => {
   try {
