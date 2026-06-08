@@ -32,6 +32,12 @@ A full-stack ecommerce platform for selling clothes and boutique items.
 
 The app is configured to deploy as a single service on Render using `frontend/Dockerfile`.
 
+Render service settings:
+
+- Root Directory: leave blank, or use `.`
+- Docker Context Directory: `.`
+- Dockerfile Path: `frontend/Dockerfile`
+
 Required environment variables in Render:
 
 - `DATABASE_URL`

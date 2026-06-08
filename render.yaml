@@ -2,6 +2,7 @@ services:
   - type: web
     name: ecommerce-app
     runtime: docker
+    rootDir: .
     dockerContext: .
     dockerfilePath: frontend/Dockerfile
     plan: free
