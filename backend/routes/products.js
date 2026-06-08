@@ -18,6 +18,10 @@ function normalizeProductImage(product, req) {
   if (!product) return product;
   if (!product.image_url) return product;
 
+  if (product.image_url.startsWith('/api/products/images/')) {
+    return { ...product, image_url: `${getBaseUrl(req)}${product.image_url}` };
+  }
+
   if (product.image_url.startsWith('/uploads')) {
     return { ...product, image_url: `${getBaseUrl(req)}${product.image_url}` };
   }

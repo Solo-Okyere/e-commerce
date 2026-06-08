@@ -158,7 +158,7 @@ export default function OrdersPage() {
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    return url.startsWith('/uploads') ? `${apiUrl}${url}` : url;
+    return url.startsWith('/uploads') || url.startsWith('/api/products/images/') ? `${apiUrl}${url}` : url;
   }
 
   const getStatusColor = (status: string): string => {

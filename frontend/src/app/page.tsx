@@ -189,7 +189,7 @@ export default function Home() {
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (url.startsWith('/uploads')) {
+    if (url.startsWith('/uploads') || url.startsWith('/api/products/images/')) {
       return `${apiUrl}${url}`;
     }
     return url;
