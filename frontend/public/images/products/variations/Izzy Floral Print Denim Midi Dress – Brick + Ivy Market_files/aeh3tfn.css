@@ -1,0 +1,29 @@
+/*
+ * The Typekit service used to deliver this font or fonts for use on websites
+ * is provided by Adobe and is subject to these Terms of Use
+ * http://www.adobe.com/products/eulas/tou_typekit. For font license
+ * information, see the list below.
+ *
+ * ivypresto-text:
+ *   - http://typekit.com/eulas/00000000000000007735e5bd
+ *   - http://typekit.com/eulas/00000000000000007735e5bb
+ *
+ * © 2009-2026 Adobe Systems Incorporated. All Rights Reserved.
+ */
+/*{"last_published":"2024-08-08 13:31:23 UTC"}*/
+
+@import url("https://p.typekit.net/p.css?s=1&k=aeh3tfn&ht=tk&f=45422.45423&a=23376793&app=typekit&e=css");
+
+@font-face {
+font-family:"ivypresto-text";
+src:url("https://use.typekit.net/af/aa8d57/00000000000000007735e5bd/30/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3") format("woff2"),url("https://use.typekit.net/af/aa8d57/00000000000000007735e5bd/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3") format("woff"),url("https://use.typekit.net/af/aa8d57/00000000000000007735e5bd/30/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:100;font-stretch:normal;
+}
+
+@font-face {
+font-family:"ivypresto-text";
+src:url("https://use.typekit.net/af/f07d4a/00000000000000007735e5bb/30/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i1&v=3") format("woff2"),url("https://use.typekit.net/af/f07d4a/00000000000000007735e5bb/30/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i1&v=3") format("woff"),url("https://use.typekit.net/af/f07d4a/00000000000000007735e5bb/30/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i1&v=3") format("opentype");
+font-display:auto;font-style:italic;font-weight:100;font-stretch:normal;
+}
+
+.tk-ivypresto-text { font-family: "ivypresto-text",serif; }
