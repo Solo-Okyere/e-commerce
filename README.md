@@ -30,12 +30,9 @@ A full-stack ecommerce platform for selling clothes and boutique items.
 
 ### Render
 
-The app is configured to deploy two services on Render:
+The app is configured to deploy as a single service on Render using `frontend/Dockerfile`.
 
-- `ecommerce-backend` using `backend/Dockerfile`
-- `ecommerce-frontend` using `frontend/Dockerfile`
-
-Required backend environment variables in Render:
+Required environment variables in Render:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
@@ -43,11 +40,10 @@ Required backend environment variables in Render:
 - `PAYSTACK_CALLBACK_URL`
 - `PAYSTACK_WEBHOOK_URL`
 - `FRONTEND_URL`
+- `BACKEND_URL=http://localhost:5000`
+- `NEXT_PUBLIC_API_URL=http://localhost:5000`
 
-Frontend service environment variables on Render:
-
-- `BACKEND_URL=http://ecommerce-backend:5000`
-- `NEXT_PUBLIC_API_URL=http://ecommerce-backend:5000`
+This service starts both the backend and the frontend together in the same container.
 
 ## Features
 
