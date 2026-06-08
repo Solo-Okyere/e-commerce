@@ -1,5 +1,37 @@
 services:
   - type: web
+    name: ecommerce-backend
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5000"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_LIVE_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_TEST_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_CURRENCY
+        value: GHS
+      - key: PAYSTACK_CHANNELS
+        value: mobile_money
+      - key: FRONTEND_URL
+        value: https://fosogo.onrender.com
+      - key: PAYSTACK_CALLBACK_URL
+        value: https://fosogo.onrender.com/payment/callback
+      - key: PAYSTACK_WEBHOOK_URL
+        value: https://fosogo.onrender.com/api/payments/paystack/webhook
+  - type: web
     name: ecommerce-frontend
     runtime: docker
     dockerContext: .
@@ -11,9 +43,7 @@ services:
         value: production
       - key: PORT
         value: "8080"
+      - key: BACKEND_URL
+        value: http://ecommerce-backend:5000
       - key: NEXT_PUBLIC_API_URL
-        value: http://localhost:5000
-      - key: DATABASE_URL
-        sync: false
-      - key: PGSSL
-        value: "true"
+        value: http://ecommerce-backend:5000
