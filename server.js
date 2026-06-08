@@ -11,7 +11,6 @@ const backend = spawn('node', ['index.js'], {
     ...process.env,
     NODE_ENV: 'production',
     PORT: '5000',
-    DB_PATH: '/data/ecommerce.db',
   },
 });
 

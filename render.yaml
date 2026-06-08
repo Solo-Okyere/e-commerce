@@ -6,9 +6,6 @@ services:
     dockerfilePath: frontend/Dockerfile
     plan: free
     autoDeploy: true
-    disk:
-      name: ecommerce-db
-      mountPath: /data
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,3 +13,7 @@ services:
         value: "8080"
       - key: NEXT_PUBLIC_API_URL
         value: http://localhost:5000
+      - key: DATABASE_URL
+        sync: false
+      - key: PGSSL
+        value: "true"

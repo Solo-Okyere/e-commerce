@@ -1,29 +1,14 @@
 const express = require('express');
 const db = require('../database');
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 
 const router = express.Router();
-const uploadsDir = process.env.UPLOADS_DIR
-  ? path.resolve(process.env.UPLOADS_DIR)
-  : fs.existsSync('/var/data')
-  ? '/var/data/uploads'
-  : path.resolve(__dirname, '../uploads');
-const productsUploadDir = path.join(uploadsDir, 'products');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    fs.mkdirSync(productsUploadDir, { recursive: true });
-    cb(null, productsUploadDir);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: Number(process.env.MAX_PRODUCT_IMAGE_BYTES || 5 * 1024 * 1024),
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
 });
-
-const upload = multer({ storage });
 
 function getBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
@@ -52,6 +37,17 @@ function normalizeProductImage(product, req) {
 
   return product;
 }
+
+router.get('/images/:id', async (req, res) => {
+  const image = await db.getProductImage(req.params.id);
+  if (!image) {
+    return res.status(404).json({ message: 'Image not found' });
+  }
+
+  res.setHeader('Content-Type', image.content_type);
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(image.data);
+});
 
 function normalizeSizes(sizes) {
   const allowedSizes = ['s', 'm', 'l', 'xl', 'xxl'];
@@ -86,7 +82,8 @@ router.post('/', upload.single('image'), async (req, res) => {
 
   let finalImageUrl = null;
   if (req.file) {
-    finalImageUrl = `/uploads/products/${req.file.filename}`;
+    const image = await db.createProductImage(req.file);
+    finalImageUrl = `/api/products/images/${image.id}`;
   } else if (typeof image_url === 'string' && image_url.trim()) {
     finalImageUrl = image_url.trim();
   }
@@ -113,7 +110,8 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   }
 
   if (req.file) {
-    updateData.image_url = `/uploads/products/${req.file.filename}`;
+    const image = await db.createProductImage(req.file);
+    updateData.image_url = `/api/products/images/${image.id}`;
   } else if (typeof image_url === 'string') {
     updateData.image_url = image_url.trim() || null;
   }

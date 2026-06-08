@@ -1,6 +1,5 @@
 console.log('Starting FOSOGO Closet API server...');
 
-const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -34,18 +33,11 @@ if (paystackKey) {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const uploadsDir = process.env.UPLOADS_DIR
+const legacyUploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
-  : fs.existsSync('/var/data')
-  ? '/var/data/uploads'
   : path.resolve(__dirname, 'uploads');
 
 app.set('trust proxy', 1);
-
-// Ensure upload directories exist
-const productsUploadDir = path.join(uploadsDir, 'products');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-if (!fs.existsSync(productsUploadDir)) fs.mkdirSync(productsUploadDir, { recursive: true });
 
 // CORS — allow only the Render frontend and localhost admin port
 const ALLOWED_ORIGINS = [
@@ -82,7 +74,7 @@ app.use(express.json({
     req.rawBody = buffer;
   },
 }));
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(legacyUploadsDir));
 
 // API routes
 app.get('/', (req, res) => {

@@ -6,7 +6,7 @@ A full-stack ecommerce platform for selling clothes and boutique items.
 
 - **Frontend**: Next.js with TypeScript and Tailwind CSS
 - **Backend**: Node.js with Express.js
-- **Database**: Local JSON store (`backend/data.json`) for current development setup
+- **Database**: Neon/PostgreSQL via `DATABASE_URL`
 - **Payments**: Mobile money (Ghana cedis)
 - **Mobile**: React Native (planned)
 
@@ -16,7 +16,7 @@ A full-stack ecommerce platform for selling clothes and boutique items.
 
 1. Navigate to `backend` directory
 2. Install dependencies: `npm install`
-3. Create `.env` file with your JWT secret
+3. Create `.env` file with `DATABASE_URL`, `JWT_SECRET`, and payment/email secrets
 4. Run development server: `npm run dev`
 
 ### Frontend
