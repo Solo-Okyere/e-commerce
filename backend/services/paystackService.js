@@ -25,6 +25,7 @@ const PAYSTACK_SECRET_KEY =
   process.env.PAYSTACK_LIVE_SECRET_KEY ||
   process.env.PAYSTACK_TEST_SECRET_KEY;
 const PAYSTACK_CURRENCY = process.env.PAYSTACK_CURRENCY || 'GHS';
+const PAYSTACK_TIMEOUT_MS = Number(process.env.PAYSTACK_TIMEOUT_MS || 15000);
 const PAYSTACK_CHANNELS = (process.env.PAYSTACK_CHANNELS || 'mobile_money')
   .split(',')
   .map((channel) => channel.trim())
@@ -45,14 +46,31 @@ function toMinorUnit(amount) {
 async function requestPaystack(path, options = {}) {
   ensurePaystackConfigured();
 
-  const response = await fetch(`${PAYSTACK_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await fetch(`${PAYSTACK_BASE_URL}${path}`, {
+      ...options,
+      signal: options.signal || controller.signal,
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+    });
+  } catch (error) {
+    const cause = error.cause || error;
+    const message = cause?.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+      ? 'Could not connect to Paystack because Node could not verify the TLS certificate. Restart the backend with Node system certificates enabled.'
+      : error.name === 'AbortError'
+      ? `Paystack request timed out after ${PAYSTACK_TIMEOUT_MS / 1000} seconds. Please try again.`
+      : `Could not connect to Paystack: ${cause?.message || error.message}`;
+    throw new Error(message);
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.status === false) {
