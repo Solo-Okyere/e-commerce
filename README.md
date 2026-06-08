@@ -36,7 +36,7 @@ Required environment variables in Render:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
-- `PAYSTACK_SECRET_KEY` or `PAYSTACK_LIVE_SECRET_KEY`
+- `PAYSTACK_SECRET_KEY`, `PAYSTACK_LIVE_SECRET_KEY`, or `PAYSTACK_TEST_SECRET_KEY`
 - `PAYSTACK_CALLBACK_URL`
 - `PAYSTACK_WEBHOOK_URL`
 - `FRONTEND_URL`
@@ -54,8 +54,6 @@ This service starts both the backend and the frontend together in the same conta
 - Admin dashboard
 
 ## Development
-
-NP
 
 - Backend API runs on http://localhost:5000
 - Frontend runs on http://localhost:3000

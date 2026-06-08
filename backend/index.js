@@ -4,6 +4,9 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 const db = require('./database');
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
@@ -12,8 +15,6 @@ const orderRoutes = require('./routes/orders');
 const cartRoutes = require('./routes/cart');
 const paymentRoutes = require('./routes/payments');
 const userRoutes = require('./routes/users');
-
-dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const paystackKey =
   process.env.PAYSTACK_SECRET_KEY ||
