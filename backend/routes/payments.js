@@ -140,15 +140,7 @@ async function createOrReusePendingOrder(req) {
   }
 
   const existingOrder = normalizedCheckoutKey ? await db.findOrderByCheckoutKey(normalizedCheckoutKey) : null;
-  if (existingOrder && existingOrder.status === 'paid') {
-    return { order: existingOrder, items: await getOrderItemsForEmail(existingOrder.id), reused: true };
-  }
-
-  if (existingOrder && existingOrder.status === 'pending') {
-    return { order: existingOrder, items: await getOrderItemsForEmail(existingOrder.id), reused: true };
-  }
-
-  if (existingOrder && existingOrder.status === 'failed') {
+  if (existingOrder) {
     return { order: existingOrder, items: await getOrderItemsForEmail(existingOrder.id), reused: true };
   }
 
