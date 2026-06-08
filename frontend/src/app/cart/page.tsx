@@ -42,7 +42,7 @@ export default function CartPage() {
 
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     return url.startsWith('/uploads') || url.startsWith('/api/products/images/') ? `${apiUrl}${url}` : url;
   }
 
@@ -50,7 +50,7 @@ export default function CartPage() {
      if (authToken) {
        // Load from API
        try {
-         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
          const response = await fetch(`${apiUrl}/api/cart`, {
            headers: { Authorization: `Bearer ${authToken}` },
          });
@@ -81,7 +81,7 @@ export default function CartPage() {
          // Fetch product details for each item
          const itemsWithProducts = await Promise.all(cartItems.map(async (item) => {
            try {
-             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+             const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
              const response = await fetch(`${apiUrl}/api/products/${item.product_id}`);
              if (response.ok) {
                return { ...item, product: await response.json() };
@@ -114,7 +114,7 @@ export default function CartPage() {
      if (token) {
        // Update via API
        try {
-         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
          const response = await fetch(`${apiUrl}/api/cart/${itemId}`, {
            method: 'PUT',
            headers: {
@@ -169,7 +169,7 @@ export default function CartPage() {
     if (token) {
       // Remove via API
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${apiUrl}/api/cart/${itemId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },

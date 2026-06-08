@@ -41,7 +41,6 @@ Required environment variables in Render:
 - `PAYSTACK_WEBHOOK_URL`
 - `FRONTEND_URL`
 - `BACKEND_URL=http://localhost:5000`
-- `NEXT_PUBLIC_API_URL=http://localhost:5000`
 
 This service starts both the backend and the frontend together in the same container.
 

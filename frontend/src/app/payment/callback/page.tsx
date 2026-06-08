@@ -44,7 +44,7 @@ function PaymentCallbackContent() {
       }
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${apiUrl}/api/payments/paystack/verify/${encodeURIComponent(reference)}`);
         const data = await response.json();
 

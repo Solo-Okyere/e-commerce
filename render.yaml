@@ -29,5 +29,3 @@ services:
         value: https://fosogo.onrender.com
       - key: BACKEND_URL
         value: http://localhost:5000
-      - key: NEXT_PUBLIC_API_URL
-        value: http://localhost:5000

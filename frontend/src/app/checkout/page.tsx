@@ -26,7 +26,7 @@ type LocalCartItem = {
 
 function normalizeImageUrl(url?: string) {
   if (!url) return undefined;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   return url.startsWith('/uploads') || url.startsWith('/api/products/images/') ? `${apiUrl}${url}` : url;
 }
 
@@ -87,7 +87,7 @@ function CheckoutForm({ items, total, onSuccess }: CheckoutFormProps) {
     const token = localStorage.getItem('fosogo_token');
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const checkoutKey = getCheckoutKey();
       const response = await fetch(`${apiUrl}/api/payments/paystack/initialize`, {
         method: 'POST',
@@ -279,7 +279,7 @@ export default function CheckoutPage() {
      const token = getToken();
      if (token) {
        try {
-         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
          const response = await fetch(`${apiUrl}/api/cart`, {
            headers: { Authorization: `Bearer ${token}` },
          });
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
          const cartItems: LocalCartItem[] = JSON.parse(localCart);
          const itemsWithProducts = await Promise.all(cartItems.map(async (item) => {
            try {
-             const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+             const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
              const response = await fetch(`${apiUrl}/api/products/${item.product_id}`);
              if (response.ok) {
                const product = await response.json();

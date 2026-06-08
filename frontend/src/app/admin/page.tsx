@@ -116,7 +116,7 @@ export default function AdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
       const [productsRes, categoriesRes] = await Promise.all([
         fetch(`${apiUrl}/api/products`),
@@ -218,7 +218,7 @@ export default function AdminPage() {
 
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     return url.startsWith('/uploads') || url.startsWith('/api/products/images/')
       ? `${apiUrl}${url}`
       : url;
@@ -236,7 +236,7 @@ export default function AdminPage() {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', description);
@@ -280,7 +280,7 @@ export default function AdminPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${apiUrl}/api/products/${productId}`, {
         method: 'DELETE',
       });
@@ -303,7 +303,7 @@ export default function AdminPage() {
     setError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const response = await fetch(`${apiUrl}/api/payments/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
