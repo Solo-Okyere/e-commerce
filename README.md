@@ -26,6 +26,29 @@ A full-stack ecommerce platform for selling clothes and boutique items.
 3. Create `.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:5000`
 4. Run development server: `npm run dev`
 
+## Deployment
+
+### Render
+
+The app is configured to deploy two services on Render:
+
+- `ecommerce-backend` using `backend/Dockerfile`
+- `ecommerce-frontend` using `frontend/Dockerfile`
+
+Required backend environment variables in Render:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `PAYSTACK_SECRET_KEY` or `PAYSTACK_LIVE_SECRET_KEY`
+- `PAYSTACK_CALLBACK_URL`
+- `PAYSTACK_WEBHOOK_URL`
+- `FRONTEND_URL`
+
+Frontend service environment variables on Render:
+
+- `BACKEND_URL=http://ecommerce-backend:5000`
+- `NEXT_PUBLIC_API_URL=http://ecommerce-backend:5000`
+
 ## Features
 
 - User authentication
