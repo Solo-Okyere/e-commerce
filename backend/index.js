@@ -34,6 +34,7 @@ if (paystackKey) {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || process.env.BACKEND_HOST || '0.0.0.0';
 const legacyUploadsDir = process.env.UPLOADS_DIR
   ? path.resolve(process.env.UPLOADS_DIR)
   : path.resolve(__dirname, 'uploads');
@@ -90,6 +91,6 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
 });

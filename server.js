@@ -4,6 +4,8 @@ const path = require('path');
 const rootDir = path.resolve(__dirname);
 const frontendDir = path.join(rootDir, 'frontend');
 const backendDir = path.join(rootDir, 'backend');
+const backendPort = process.env.BACKEND_PORT || '5000';
+const frontendPort = process.env.PORT || '8080';
 let shuttingDown = false;
 let frontend = null;
 
@@ -27,7 +29,9 @@ const backend = spawn(process.execPath, backendArgs, {
   env: {
     ...process.env,
     NODE_ENV: 'production',
-    PORT: '5000',
+    PORT: backendPort,
+    HOST: '127.0.0.1',
+    BACKEND_HOST: '127.0.0.1',
   },
 });
 
@@ -49,14 +53,15 @@ backend.on('exit', (code) => {
 setTimeout(() => {
   console.log('Starting frontend server...');
   const nextBin = require.resolve('next/dist/bin/next', { paths: [frontendDir, rootDir] });
-  frontend = spawn(process.execPath, [nextBin, 'start', '-p', '8080', '--hostname', '0.0.0.0'], {
+  frontend = spawn(process.execPath, [nextBin, 'start', '-p', frontendPort, '--hostname', '0.0.0.0'], {
     cwd: frontendDir,
     stdio: 'inherit',
     env: {
       ...process.env,
       NODE_ENV: 'production',
-      PORT: '8080',
-      NEXT_PUBLIC_API_URL: 'http://localhost:5000',
+      PORT: frontendPort,
+      BACKEND_URL: `http://127.0.0.1:${backendPort}`,
+      NEXT_PUBLIC_API_URL: '',
     },
   });
 

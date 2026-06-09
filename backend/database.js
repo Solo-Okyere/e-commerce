@@ -17,8 +17,20 @@ const shouldUseSsl =
   connectionString.includes('neon.tech') ||
   connectionString.includes('sslmode=require');
 
+function normalizeConnectionString(value) {
+  try {
+    const url = new URL(value);
+    if (['prefer', 'require', 'verify-ca'].includes(url.searchParams.get('sslmode'))) {
+      url.searchParams.delete('sslmode');
+    }
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
 const pool = new Pool({
-  connectionString,
+  connectionString: normalizeConnectionString(connectionString),
   ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
 });
 
