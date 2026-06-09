@@ -10,30 +10,27 @@ const upload = multer({
   },
 });
 
-function getBaseUrl(req) {
-  return `${req.protocol}://${req.get('host')}`;
-}
-
 function normalizeProductImage(product, req) {
   if (!product) return product;
   if (!product.image_url) return product;
 
   if (product.image_url.startsWith('/api/products/images/')) {
-    return { ...product, image_url: `${getBaseUrl(req)}${product.image_url}` };
+    return product;
   }
 
   if (product.image_url.startsWith('/uploads')) {
-    return { ...product, image_url: `${getBaseUrl(req)}${product.image_url}` };
+    return product;
   }
 
   try {
     const imageUrl = new URL(product.image_url);
     const isLocalUpload =
       ['localhost', '127.0.0.1'].includes(imageUrl.hostname) &&
-      imageUrl.pathname.startsWith('/uploads');
+      (imageUrl.pathname.startsWith('/uploads') ||
+        imageUrl.pathname.startsWith('/api/products/images/'));
 
     if (isLocalUpload) {
-      return { ...product, image_url: `${getBaseUrl(req)}${imageUrl.pathname}` };
+      return { ...product, image_url: imageUrl.pathname };
     }
   } catch {
     return product;
