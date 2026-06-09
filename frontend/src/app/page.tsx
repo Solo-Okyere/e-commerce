@@ -28,6 +28,20 @@ type CartItem = {
   size: string;
 };
 
+function getApiUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  if (!configuredUrl) return '';
+
+  try {
+    const url = new URL(configuredUrl);
+    if (['localhost', '127.0.0.1'].includes(url.hostname)) return '';
+  } catch {
+    return '';
+  }
+
+  return configuredUrl.replace(/\/$/, '');
+}
+
 export default function Home() {
   const idCounter = useRef<number>((() => {
     try {
@@ -84,7 +98,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const apiUrl = getApiUrl();
 
       // Fetch products
       const productsResponse = await fetch(`${apiUrl}/api/products`);
@@ -132,7 +146,7 @@ export default function Home() {
         const token = getToken();
         if (token) {
          try {
-           const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+           const apiUrl = getApiUrl();
            const response = await fetch(`${apiUrl}/api/cart`, {
              headers: { Authorization: `Bearer ${token}` },
            });
@@ -188,7 +202,7 @@ export default function Home() {
 
   function normalizeImageUrl(url?: string) {
     if (!url) return undefined;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const apiUrl = getApiUrl();
     if (url.startsWith('/uploads') || url.startsWith('/api/products/images/')) {
       return `${apiUrl}${url}`;
     }
@@ -213,7 +227,7 @@ export default function Home() {
       if (token) {
        // Add via API
        try {
-         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+         const apiUrl = getApiUrl();
          const response = await fetch(`${apiUrl}/api/cart`, {
            method: 'POST',
            headers: {
