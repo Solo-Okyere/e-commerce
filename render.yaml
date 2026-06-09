@@ -12,6 +12,8 @@ services:
         value: production
       - key: PORT
         value: "8080"
+      - key: BACKEND_PORT
+        value: "5001"
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
