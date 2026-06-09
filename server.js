@@ -61,7 +61,7 @@ setTimeout(() => {
       NODE_ENV: 'production',
       PORT: frontendPort,
       BACKEND_URL: `http://127.0.0.1:${backendPort}`,
-      NEXT_PUBLIC_API_URL: '',
+      NEXT_PUBLIC_API_URL: `http://127.0.0.1:${backendPort}`,
     },
   });
 
