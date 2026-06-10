@@ -6,7 +6,7 @@ const rootDir = path.resolve(__dirname);
 const frontendDir = path.join(rootDir, 'frontend');
 const backendDir = path.join(rootDir, 'backend');
 const frontendPort = process.env.PORT || '8080';
-const backendPort = process.env.BACKEND_PORT || (frontendPort === '5000' ? '5001' : '5000');
+const backendPort = frontendPort === '5000' ? '5001' : '5000';
 let shuttingDown = false;
 let frontend = null;
 
