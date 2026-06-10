@@ -1,7 +1,7 @@
-const dotenv = require('dotenv');
 const { Pool, types } = require('pg');
+const { loadEnv } = require('./config/env');
 
-dotenv.config();
+loadEnv();
 
 types.setTypeParser(20, (value) => Number(value));
 types.setTypeParser(1700, (value) => Number(value));

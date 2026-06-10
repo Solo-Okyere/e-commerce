@@ -19,10 +19,14 @@ COPY frontend ./frontend
 # Copy server.js
 COPY server.js ./
 
+ENV INTERNAL_API_PORT=5001
+ENV INTERNAL_API_ORIGIN=http://127.0.0.1:5001
+ENV NEXT_PUBLIC_API_URL=
+
 # Build frontend
 RUN cd frontend && npm run build
 
 EXPOSE 8080
-ENV PORT=8080 NODE_ENV=production
+ENV PORT=8080 NODE_ENV=production INTERNAL_API_PORT=5001 INTERNAL_API_ORIGIN=http://127.0.0.1:5001
 
 CMD ["node", "server.js"]

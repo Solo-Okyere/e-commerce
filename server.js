@@ -6,7 +6,8 @@ const rootDir = path.resolve(__dirname);
 const frontendDir = path.join(rootDir, 'frontend');
 const backendDir = path.join(rootDir, 'backend');
 const frontendPort = process.env.PORT || '8080';
-const backendPort = frontendPort === '5000' ? '5001' : '5000';
+const backendPort = process.env.INTERNAL_API_PORT || '5001';
+const backendOrigin = process.env.INTERNAL_API_ORIGIN || `http://127.0.0.1:${backendPort}`;
 let shuttingDown = false;
 let frontend = null;
 
@@ -54,7 +55,7 @@ backend.on('exit', (code) => {
 function waitForBackendReady() {
   const startedAt = Date.now();
   const timeoutMs = Number(process.env.BACKEND_READY_TIMEOUT_MS || 90000);
-  const url = `http://127.0.0.1:${backendPort}/health`;
+  const url = `${backendOrigin}/health`;
 
   return new Promise((resolve, reject) => {
     function check() {
@@ -105,8 +106,10 @@ async function startFrontend() {
       ...process.env,
       NODE_ENV: 'production',
       PORT: frontendPort,
-      BACKEND_URL: `http://127.0.0.1:${backendPort}`,
-      NEXT_PUBLIC_API_URL: `http://127.0.0.1:${backendPort}`,
+      INTERNAL_API_PORT: backendPort,
+      INTERNAL_API_ORIGIN: backendOrigin,
+      BACKEND_URL: backendOrigin,
+      NEXT_PUBLIC_API_URL: '',
     },
   });
 

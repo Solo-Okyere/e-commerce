@@ -3,9 +3,9 @@ console.log('Starting FOSOGO Closet API server...');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
+const { getPaystackSecretKey, loadEnv } = require('./config/env');
 
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+loadEnv();
 
 const db = require('./database');
 const authRoutes = require('./routes/auth');
@@ -16,13 +16,7 @@ const cartRoutes = require('./routes/cart');
 const paymentRoutes = require('./routes/payments');
 const userRoutes = require('./routes/users');
 
-const paystackKey =
-  process.env.PAYSTACK_SECRET_KEY ||
-  (process.env.NODE_ENV === 'production'
-    ? process.env.PAYSTACK_LIVE_SECRET_KEY
-    : process.env.PAYSTACK_TEST_SECRET_KEY) ||
-  process.env.PAYSTACK_LIVE_SECRET_KEY ||
-  process.env.PAYSTACK_TEST_SECRET_KEY;
+const paystackKey = getPaystackSecretKey();
 
 if (paystackKey) {
   process.env.PAYSTACK_SECRET_KEY = paystackKey;
@@ -31,6 +25,10 @@ if (paystackKey) {
     'Warning: Paystack secret key is not configured. Paystack payment initialization will fail until PAYSTACK_SECRET_KEY or PAYSTACK_TEST_SECRET_KEY is set.'
   );
 }
+
+console.log(
+  `Runtime configuration: DATABASE_URL=${process.env.DATABASE_URL ? 'set' : 'missing'}, PAYSTACK_SECRET_KEY=${paystackKey ? 'set' : 'missing'}`
+);
 
 const app = express();
 const PORT = process.env.PORT || 5000;

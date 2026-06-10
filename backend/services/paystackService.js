@@ -1,29 +1,9 @@
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const dotenv = require('dotenv');
+const { getPaystackSecretKey, loadEnv } = require('../config/env');
 
-const envCandidates = [
-  path.resolve(__dirname, '../.env'),
-  path.resolve(__dirname, '../../.env'),
-  path.resolve(process.cwd(), 'backend/.env'),
-  path.resolve(process.cwd(), '.env'),
-];
-const envPath = envCandidates.find((candidate) => fs.existsSync(candidate));
-if (envPath) {
-  dotenv.config({ path: envPath });
-} else {
-  dotenv.config();
-}
+loadEnv();
 
 const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co';
-const PAYSTACK_SECRET_KEY =
-  process.env.PAYSTACK_SECRET_KEY ||
-  (process.env.NODE_ENV === 'production'
-    ? process.env.PAYSTACK_LIVE_SECRET_KEY
-    : process.env.PAYSTACK_TEST_SECRET_KEY) ||
-  process.env.PAYSTACK_LIVE_SECRET_KEY ||
-  process.env.PAYSTACK_TEST_SECRET_KEY;
 const PAYSTACK_CURRENCY = process.env.PAYSTACK_CURRENCY || 'GHS';
 const PAYSTACK_TIMEOUT_MS = Number(process.env.PAYSTACK_TIMEOUT_MS || 15000);
 const PAYSTACK_CHANNELS = (process.env.PAYSTACK_CHANNELS || 'mobile_money')
@@ -32,7 +12,7 @@ const PAYSTACK_CHANNELS = (process.env.PAYSTACK_CHANNELS || 'mobile_money')
   .filter(Boolean);
 
 function ensurePaystackConfigured() {
-  if (!PAYSTACK_SECRET_KEY) {
+  if (!getPaystackSecretKey()) {
     throw new Error(
       'Paystack secret key is not configured. Set PAYSTACK_SECRET_KEY, PAYSTACK_TEST_SECRET_KEY, or PAYSTACK_LIVE_SECRET_KEY in backend/.env or the deployment environment.'
     );
@@ -45,6 +25,7 @@ function toMinorUnit(amount) {
 
 async function requestPaystack(path, options = {}) {
   ensurePaystackConfigured();
+  const paystackSecretKey = getPaystackSecretKey();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS);
@@ -55,7 +36,7 @@ async function requestPaystack(path, options = {}) {
       ...options,
       signal: options.signal || controller.signal,
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${paystackSecretKey}`,
         'Content-Type': 'application/json',
         ...(options.headers || {}),
       },
@@ -120,10 +101,11 @@ async function verifyTransaction(reference) {
 }
 
 function verifyWebhookSignature(rawBody, signature) {
-  if (!PAYSTACK_SECRET_KEY || !rawBody || !signature) return false;
+  const paystackSecretKey = getPaystackSecretKey();
+  if (!paystackSecretKey || !rawBody || !signature) return false;
 
   const hash = crypto
-    .createHmac('sha512', PAYSTACK_SECRET_KEY)
+    .createHmac('sha512', paystackSecretKey)
     .update(rawBody)
     .digest('hex');
 

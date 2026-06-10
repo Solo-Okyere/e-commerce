@@ -12,8 +12,10 @@ services:
         value: production
       - key: PORT
         value: "8080"
-      - key: BACKEND_PORT
-        value: "5000"
+      - key: INTERNAL_API_PORT
+        value: "5001"
+      - key: INTERNAL_API_ORIGIN
+        value: http://127.0.0.1:5001
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
@@ -30,5 +32,3 @@ services:
         value: https://fosogo.onrender.com/api/payments/paystack/webhook
       - key: FRONTEND_URL
         value: https://fosogo.onrender.com
-      - key: BACKEND_URL
-        value: http://localhost:5000
