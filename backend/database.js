@@ -191,6 +191,75 @@ async function initDatabase() {
     )
   `);
 
+  await queryRaw(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'customer',
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  `);
+
+  await queryRaw(`
+    ALTER TABLE categories
+      ADD COLUMN IF NOT EXISTS description TEXT
+  `);
+
+  await queryRaw(`
+    ALTER TABLE products
+      ADD COLUMN IF NOT EXISTS description TEXT,
+      ADD COLUMN IF NOT EXISTS image_url TEXT,
+      ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS sizes TEXT DEFAULT 's,m,l,xl,xxl'
+  `);
+
+  await queryRaw(`
+    ALTER TABLE orders
+      ADD COLUMN IF NOT EXISTS order_number TEXT,
+      ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS customer_email TEXT,
+      ADD COLUMN IF NOT EXISTS checkout_key TEXT,
+      ADD COLUMN IF NOT EXISTS payment_provider TEXT,
+      ADD COLUMN IF NOT EXISTS payment_reference TEXT,
+      ADD COLUMN IF NOT EXISTS payment_status TEXT,
+      ADD COLUMN IF NOT EXISTS payment_details TEXT,
+      ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS total NUMERIC(12, 2) DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending',
+      ADD COLUMN IF NOT EXISTS shipping_address TEXT,
+      ADD COLUMN IF NOT EXISTS payment_method TEXT,
+      ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'GHS',
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  `);
+
+  await queryRaw(`
+    ALTER TABLE order_items
+      ADD COLUMN IF NOT EXISTS size TEXT,
+      ADD COLUMN IF NOT EXISTS price NUMERIC(12, 2) DEFAULT 0
+  `);
+
+  await queryRaw(`
+    ALTER TABLE cart_items
+      ADD COLUMN IF NOT EXISTS size TEXT
+  `);
+
+  await queryRaw(`
+    ALTER TABLE payment_transactions
+      ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'GHS',
+      ADD COLUMN IF NOT EXISTS authorization_url TEXT,
+      ADD COLUMN IF NOT EXISTS access_code TEXT,
+      ADD COLUMN IF NOT EXISTS provider_response TEXT,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  `);
+
+  await queryRaw(`
+    ALTER TABLE order_email_notifications
+      ADD COLUMN IF NOT EXISTS resend_email_id TEXT,
+      ADD COLUMN IF NOT EXISTS error_message TEXT,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS failed_at TIMESTAMPTZ
+  `);
+
   await queryRaw('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_checkout_key ON orders(checkout_key) WHERE checkout_key IS NOT NULL');
   await queryRaw('CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_payment_reference ON orders(payment_reference) WHERE payment_reference IS NOT NULL');
 

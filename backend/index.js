@@ -82,6 +82,9 @@ app.use('/uploads', express.static(legacyUploadsDir));
 app.get('/', (req, res) => {
   res.send('FOSOGO Closet API');
 });
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -90,7 +93,26 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/users', userRoutes);
 
-// Start server
-app.listen(PORT, HOST, () => {
-  console.log(`Server running on ${HOST}:${PORT}`);
+app.use((error, req, res, next) => {
+  console.error(`Unhandled API error for ${req.method} ${req.originalUrl}:`, error);
+  if (res.headersSent) {
+    return next(error);
+  }
+  res.status(error.statusCode || 500).json({
+    message: error.message || 'Internal server error',
+  });
 });
+
+async function startServer() {
+  try {
+    await db.ready();
+    app.listen(PORT, HOST, () => {
+      console.log(`Server running on ${HOST}:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start API server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
