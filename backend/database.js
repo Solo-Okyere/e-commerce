@@ -1,10 +1,11 @@
-const { Pool, types } = require('pg');
+const { Pool, neonConfig } = require('@neondatabase/serverless');
+const ws = require('ws');
 const { loadEnv } = require('./config/env');
 
 loadEnv();
 
-types.setTypeParser(20, (value) => Number(value));
-types.setTypeParser(1700, (value) => Number(value));
+// Use WebSockets so the driver works even when TCP port 5432 is blocked
+neonConfig.webSocketConstructor = ws;
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -12,17 +13,12 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is required. Configure it with your Neon PostgreSQL connection string.');
 }
 
-const shouldUseSsl =
-  process.env.PGSSL === 'true' ||
-  connectionString.includes('neon.tech') ||
-  connectionString.includes('sslmode=require');
-
 function normalizeConnectionString(value) {
   try {
     const url = new URL(value);
-    if (['prefer', 'require', 'verify-ca'].includes(url.searchParams.get('sslmode'))) {
-      url.searchParams.delete('sslmode');
-    }
+    // The serverless driver handles SSL internally; strip these params to avoid conflicts
+    url.searchParams.delete('sslmode');
+    url.searchParams.delete('channel_binding');
     return url.toString();
   } catch {
     return value;
@@ -31,7 +27,6 @@ function normalizeConnectionString(value) {
 
 const pool = new Pool({
   connectionString: normalizeConnectionString(connectionString),
-  ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
 });
 
 const allowedTables = new Set([

@@ -60,7 +60,8 @@ export default function CartPage() {
            setToken(null);
            // Fall through to localStorage cart below
          } else if (!response.ok) {
-           const payload = await response.json();
+           const ct = response.headers.get('content-type') || '';
+           const payload = ct.includes('application/json') ? await response.json() : {};
            throw new Error(payload.message || 'Failed to load cart');
          } else {
            const data = await response.json();
@@ -133,7 +134,8 @@ export default function CartPage() {
          }
 
          if (!response.ok) {
-           const payload = await response.json();
+           const ct = response.headers.get('content-type') || '';
+           const payload = ct.includes('application/json') ? await response.json() : {};
            throw new Error(payload.message || 'Failed to update cart');
          }
 
@@ -184,7 +186,8 @@ export default function CartPage() {
         }
 
         if (!response.ok) {
-          const payload = await response.json();
+          const ct = response.headers.get('content-type') || '';
+          const payload = ct.includes('application/json') ? await response.json() : {};
           throw new Error(payload.message || 'Failed to remove item');
         }
 

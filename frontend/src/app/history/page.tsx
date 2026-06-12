@@ -109,7 +109,8 @@ export default function HistoryPage() {
           localStorage.removeItem('fosogo_token');
           // Fall through to localStorage
         } else if (!response.ok) {
-          const payload = await response.json();
+          const ct = response.headers.get('content-type') || '';
+          const payload = ct.includes('application/json') ? await response.json() : {};
           throw new Error(payload.message || 'Failed to load orders');
         } else {
           const data = (await response.json()) as RawOrder[];

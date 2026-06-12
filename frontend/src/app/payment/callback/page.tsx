@@ -46,7 +46,8 @@ function PaymentCallbackContent() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const response = await fetch(`${apiUrl}/api/payments/paystack/verify/${encodeURIComponent(reference)}`);
-        const data = await response.json();
+        const ct = response.headers.get('content-type') || '';
+        const data = ct.includes('application/json') ? await response.json() : {};
 
         if (!response.ok || data.status !== 'success') {
           updateStoredOrderStatus(data.order?.id, reference, 'failed');

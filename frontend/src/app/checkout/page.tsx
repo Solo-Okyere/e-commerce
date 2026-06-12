@@ -288,7 +288,8 @@ export default function CheckoutPage() {
            localStorage.removeItem('fosogo_token');
            // Fall through to localStorage cart below
          } else if (!response.ok) {
-           const payload = await response.json();
+           const ct = response.headers.get('content-type') || '';
+           const payload = ct.includes('application/json') ? await response.json() : {};
            throw new Error(payload.message || 'Failed to load cart');
          } else {
            const data = await response.json();

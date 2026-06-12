@@ -237,12 +237,12 @@ export default function Home() {
            body: JSON.stringify({ product_id: productId, quantity: 1, size: normalizedSize }),
          });
 
-         const payload = await response.json();
-         
-          if (response.status === 401) {
+         if (response.status === 401) {
             localStorage.removeItem('fosogo_token');
             // Fall through to localStorage cart below
          } else if (!response.ok) {
+           const ct = response.headers.get('content-type') || '';
+           const payload = ct.includes('application/json') ? await response.json() : {};
            throw new Error(payload.message || 'Unable to add item to cart');
          } else {
            setMessage(`Size ${normalizedSize.toUpperCase()} item added to cart successfully.`);

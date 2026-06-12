@@ -105,7 +105,8 @@ export default function OrdersPage() {
             localStorage.removeItem('fosogo_token');
             // Fall through to localStorage
           } else if (!response.ok) {
-            const payload = await response.json();
+            const ct = response.headers.get('content-type') || '';
+            const payload = ct.includes('application/json') ? await response.json() : {};
             throw new Error(payload.message || 'Failed to load orders');
           } else {
             const data = await response.json();
@@ -210,6 +211,7 @@ export default function OrdersPage() {
             </div>
             {orders.length > 0 && (
               <button
+                type="button"
                 onClick={handleRefresh}
                 className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200 transition"
               >
