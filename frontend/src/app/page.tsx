@@ -372,25 +372,32 @@ export default function Home() {
       </header>
 
        {mounted && showSplash ? (
-         <div className={`fixed inset-x-0 bottom-0 top-[145px] z-50 flex items-center justify-center bg-slate-950 px-4 text-white sm:top-[121px] lg:top-[93px] transition-all duration-500 ease-out ${splashAnimationClass} ${isExiting ? 'pointer-events-none' : ''}`}>
-           <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,72,153,0.28),transparent_35%),linear-gradient(315deg,rgba(14,165,233,0.2),transparent_40%)]" />
-           <div className="relative max-w-3xl text-center">
-             <p className="inline-flex rounded-full bg-white/10 px-4 py-1 text-sm font-semibold text-pink-100 ring-1 ring-white/15">
-               New arrivals
-             </p>
-             <h2 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl">
-               Elevate your wardrobe with curated boutique fashion.
-             </h2>
-             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-200">
-               Discover feminine silhouettes, modern essentials, and bold accessories crafted for a polished look.
-             </p>
-             <button
-               type="button"
-               onClick={enterShop}
-               className="mt-8 inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-slate-950 transition-all duration-200 active:scale-95 hover:bg-pink-100 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
-             >
-               Shop now
-             </button>
+         <div className={`fixed inset-x-0 bottom-0 top-[145px] z-50 overflow-hidden bg-[#f5c9a0] sm:top-[121px] lg:top-[93px] transition-all duration-500 ease-out ${splashAnimationClass} ${isExiting ? 'pointer-events-none' : ''}`}>
+           {/* Left arrow */}
+           <button type="button" aria-label="Previous" className="absolute left-3 top-1/2 z-10 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-slate-700 shadow hover:bg-white text-lg leading-none">‹</button>
+           {/* Right arrow */}
+           <button type="button" aria-label="Next" className="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-slate-700 shadow hover:bg-white text-lg leading-none">›</button>
+
+           <div className="flex h-full items-center px-14 sm:px-24">
+             <div className="max-w-sm">
+               <p className="inline-flex rounded-full bg-black/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-amber-950/60 ring-1 ring-amber-900/20">
+                 New arrivals
+               </p>
+               <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+                 Elevate your wardrobe with curated boutique fashion.
+               </h2>
+               <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                 Discover feminine silhouettes, modern essentials, and bold accessories crafted for a polished look.
+               </p>
+               <button
+                 type="button"
+                 onClick={enterShop}
+                 className="mt-7 inline-flex items-center gap-2 bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 active:scale-95 hover:bg-slate-800 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"
+               >
+                 Shop now
+                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 17L17 7M17 7H7M17 7v10" /></svg>
+               </button>
+             </div>
            </div>
          </div>
        ) : null}
