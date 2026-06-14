@@ -93,9 +93,67 @@ a {
 .prod-stagger-49 { animation-delay: 4900ms; }
 .prod-stagger-50 { animation-delay: 5000ms; }
 
+/* ── Splash animations ──────────────────────────────────────────────────── */
+@keyframes splashBgZoom {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+
+@keyframes splashFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes splashSlideLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes splashBtnPop {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.92); }
+  70%  { transform: translateY(-4px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gradientFlow {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+.splash-bg {
+  background-image: url("https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80");
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+  animation: splashBgZoom 12s ease-out forwards;
+}
+
+.splash-badge {
+  will-change: transform, opacity;
+  animation: splashSlideLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.splash-title {
+  will-change: transform, opacity;
+  animation: splashFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+
+.splash-desc {
+  will-change: transform, opacity;
+  animation: splashFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+.splash-btn {
+  will-change: transform, opacity;
+  animation: splashBtnPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both;
+}
+
 .splash-heading-gradient {
-  background-image: linear-gradient(to right, #f9a8d4, #fbbf24, #a78bfa, #34d399);
+  background-image: linear-gradient(90deg, #f9a8d4, #fbbf24, #a78bfa, #34d399, #f9a8d4);
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  will-change: background-position;
+  animation: gradientFlow 5s ease infinite;
 }

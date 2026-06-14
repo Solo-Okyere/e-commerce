@@ -372,25 +372,24 @@ export default function Home() {
       </header>
 
        {mounted && showSplash ? (
-         <div
-           className={`fixed inset-x-0 bottom-0 top-[145px] z-50 flex items-center justify-center px-4 text-white sm:top-[121px] lg:top-[93px] transition-all duration-500 ease-out ${splashAnimationClass} ${isExiting ? 'pointer-events-none' : ''}`}
-           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }}
-         >
+         <div className={`fixed inset-x-0 bottom-0 top-[145px] z-50 flex items-center justify-center overflow-hidden px-4 text-white sm:top-[121px] lg:top-[93px] transition-all duration-500 ease-out ${splashAnimationClass} ${isExiting ? 'pointer-events-none' : ''}`}>
+           {/* Ken Burns background zoom */}
+           <div className="absolute inset-0 splash-bg" />
            <div className="absolute inset-0 bg-slate-950/55" />
            <div className="relative max-w-3xl text-center">
-             <p className="inline-flex rounded-full bg-white/10 px-4 py-1 text-sm font-semibold text-pink-100 ring-1 ring-white/15">
+             <p className="splash-badge inline-flex rounded-full bg-white/10 px-4 py-1 text-sm font-semibold text-pink-100 ring-1 ring-white/15">
                New arrivals
              </p>
-             <h2 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl splash-heading-gradient">
+             <h2 className="splash-title splash-heading-gradient mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl">
                Elevate your wardrobe with curated boutique fashion.
              </h2>
-             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-200">
+             <p className="splash-desc mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-200">
                Discover feminine silhouettes, modern essentials, and bold accessories crafted for a polished look.
              </p>
              <button
                type="button"
                onClick={enterShop}
-               className="mt-8 inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-slate-950 transition-all duration-200 active:scale-95 hover:bg-pink-100 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
+               className="splash-btn mt-8 inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-slate-950 transition-all duration-200 active:scale-95 hover:bg-pink-100 hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
              >
                Shop now
              </button>
