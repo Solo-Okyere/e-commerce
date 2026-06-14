@@ -381,7 +381,7 @@ export default function Home() {
              <p className="inline-flex rounded-full bg-white/10 px-4 py-1 text-sm font-semibold text-pink-100 ring-1 ring-white/15">
                New arrivals
              </p>
-             <h2 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl">
+             <h2 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl splash-heading-gradient">
                Elevate your wardrobe with curated boutique fashion.
              </h2>
              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-200">

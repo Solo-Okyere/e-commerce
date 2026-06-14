@@ -92,3 +92,10 @@ a {
 .prod-stagger-48 { animation-delay: 4800ms; }
 .prod-stagger-49 { animation-delay: 4900ms; }
 .prod-stagger-50 { animation-delay: 5000ms; }
+
+.splash-heading-gradient {
+  background-image: linear-gradient(to right, #f9a8d4, #fbbf24, #a78bfa, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
